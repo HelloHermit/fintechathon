@@ -104,7 +104,7 @@ fintechathon/
 
 | 谁 | 负责 | 工具 | 备注 |
 |---|---|---|---|
-| 阙檩旭（队长） | `AGENTS.md`、`docs/` 全部、红队测试、答辩 | **Codex（Plus 订阅版）** | 能直接改仓库；只做整合 |
+| 阚槿旭（队长） | `AGENTS.md`、`docs/` 全部、红队测试、答辩 | **Codex（Plus 订阅版）** | 能直接改仓库；只做整合 |
 | 队友 1 | `src/` 里的代码 | **Codex（接 API 版）** | 能改文件能跑测试；按量计费 |
 | 队友 2 | `tests/`、`spec/test-plan.md`、`README.md`、PPT | **DeepSeek Harness** | 只能问答，文档要手动搬 |
 
