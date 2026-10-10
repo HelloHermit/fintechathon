@@ -28,9 +28,9 @@
 | 文件名 | 测试内容 | 对应文档 |
 |---|---|---|
 | `test_permission.py` | 权限档位判定（绿/黄/红是否正确） | `docs/01` |
-| `test_injection.py` | 注入拦截 | `docs/02` US-12 |
-| `test_hallucination.py` | 幻觉防护 | `docs/02` US-14 |
-| `test_confirm.py` | 确认流程与熔断 | `docs/02` US-08、US-15 |
+| `test_injection.py` | 注入拦截 | `docs/02` US-11 |
+| `test_hallucination.py` | 幻觉防护 | `docs/02` US-13 |
+| `test_confirm.py` | 确认流程与熔断 | `docs/02` US-09、US-15 |
 | `test_audit.py` | 审计日志（含失败/拒绝也要记录） | `docs/05` |
 | `test_money.py` | 金额计算（整数分） | `docs/02` US-02 |
 | `test_boundary.py` | 边界输入（空、负数、超长、特殊字符） | — |

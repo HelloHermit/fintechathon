@@ -87,7 +87,7 @@ fintechathon/
 ├── docs/
 │   ├── 00-scope.md                      做什么 + ★不做什么
 │   ├── 01-permission-tiers.md           ★ 权限分级表（所有代码和测试的源头）
-│   ├── 02-user-stories.md               15 条用户故事（10 正常 + 5 必须被拒绝）
+│   ├── 02-user-stories.md               13 条用户故事（8 正常 + 5 必须被拒绝）
 │   ├── 03-security-self-assessment.md   ★ 安全自评报告（必交材料）
 │   ├── 04-known-risks.md                ★ 已知风险清单（必交材料）
 │   ├── 05-audit-log-spec.md             审计日志字段规格
