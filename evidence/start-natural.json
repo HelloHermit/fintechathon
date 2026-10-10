@@ -1,0 +1,20 @@
+{
+  "mode": "real_model_cli_check",
+  "recorded_by": "主实现记录实际命令输出，不是独立或人工验收",
+  "timestamp": "2026-10-10T20:36:35+08:00",
+  "command": "$OutputEncoding = [System.Text.UTF8Encoding]::new($false); @('这个月已经花了多少？','/audit','/quit') | powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\start.ps1 -DatabasePath tests/.runs/start-natural.db",
+  "exit_code": 0,
+  "input": "这个月已经花了多少？",
+  "response": {
+    "status": "success",
+    "request_id": "8601c7611b50491ab3640c6e684a2bd2",
+    "intent": "analyze_bills",
+    "tier": "green",
+    "actual_expense_cents": 5970,
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-10",
+    "basis": "已发生且成功的支出，不含未来预计订阅"
+  },
+  "audit_observed": ["restart", "received", "received", "classified", "executed", "audit_read"],
+  "scope": "实际启动脚本入口及一条真实模型自然语言账单请求；金额和银行操作均为模拟。没有导出密钥或确认码，CLI未导出本次token用量。"
+}

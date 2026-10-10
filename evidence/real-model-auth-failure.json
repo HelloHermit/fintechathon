@@ -1,0 +1,83 @@
+{
+  "mode": "real_model_integration_check",
+  "simulated_bank": true,
+  "timestamp": "2026-10-10T20:24:01.836350+08:00",
+  "checks": [
+    {
+      "input": "这个月已经花了多少？",
+      "expected_intent": "analyze_bills",
+      "response": {
+        "status": "failed",
+        "request_id": "d9701363f0b74fd8ab883c71a75e3c3a",
+        "intent": "unknown",
+        "tier": "none",
+        "reason": "model_unavailable",
+        "message": "模型未配置或调用失败，未执行任何业务；请检查本机模型配置。",
+        "model_error_code": "model_http_error",
+        "http_status": 401
+      },
+      "usage": {}
+    }
+  ],
+  "confirmation": "测试脚本仅对事先指定的模拟用户、目标和金额进行明确确认；不是生产自动批准。",
+  "status": "failed",
+  "reason": "实际意图、目标、确认状态或账本结果不符合指定用例；已停止后续检查。",
+  "audit": [
+    {
+      "id": 1,
+      "timestamp": "2026-10-10T20:24:01.831194+08:00",
+      "request_id": "6f785a4ff36c4c25a5bbeac605936caa",
+      "step_id": null,
+      "user_id": "alice",
+      "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+      "intent": "unknown",
+      "tier": "none",
+      "params_redacted": "{}",
+      "event": "restart",
+      "result": "success",
+      "reason": "会话启动；旧待确认已失效，业务数据和验证锁定保留"
+    },
+    {
+      "id": 2,
+      "timestamp": "2026-10-10T20:24:01.836350+08:00",
+      "request_id": "d9701363f0b74fd8ab883c71a75e3c3a",
+      "step_id": null,
+      "user_id": "alice",
+      "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+      "intent": "unknown",
+      "tier": "none",
+      "params_redacted": "{}",
+      "event": "received",
+      "result": "pending",
+      "reason": ""
+    },
+    {
+      "id": 3,
+      "timestamp": "2026-10-10T20:24:01.999916+08:00",
+      "request_id": "d9701363f0b74fd8ab883c71a75e3c3a",
+      "step_id": null,
+      "user_id": "alice",
+      "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+      "intent": "unknown",
+      "tier": "none",
+      "params_redacted": "{}",
+      "event": "model_failed",
+      "result": "failed",
+      "reason": "model_http_error"
+    },
+    {
+      "id": 4,
+      "timestamp": "2026-10-10T20:24:02.005483+08:00",
+      "request_id": "598d8c187bfa4bb38a6294266aada7a1",
+      "step_id": null,
+      "user_id": "alice",
+      "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+      "intent": "unknown",
+      "tier": "none",
+      "params_redacted": "{}",
+      "event": "audit_read",
+      "result": "success",
+      "reason": "读取本人脱敏回执"
+    }
+  ]
+}

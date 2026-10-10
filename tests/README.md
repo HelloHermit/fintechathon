@@ -1,69 +1,23 @@
-# tests/ · 测试目录
+# 独立验收测试
 
-负责人：**队友 2**
-工具：**DeepSeek Harness**（只能问答 —— 看不到仓库、跑不了测试、不会自己改文件）
+`test_acceptance.py` 由隔离验收子代理编写。首次设计只读 `AGENTS.md`、`docs/01-permission-tiers.md`、`docs/02-user-stories.md`、`docs/05-audit-log-spec.md`、`spec/test-plan.md`、`src/PUBLIC_API.md`；未读取业务或模型 Python 实现。验收通过公开 `BankService` 接口执行，SQLite 只访问公开表以核对事实、设置前置条件。
 
-**★ 所以你的测试代码要投递给队长，由队长贴进 `tests/` 并运行。**
-**你没法自己跑 —— 别指望 Harness 帮你跑，它做不到。**
+在仓库根目录用 Python 3.10+ 运行，不需安装第三方依赖：
 
----
-
-## ★ 目录规则（先读这三条）
-
-**1. 这里的测试，不许由写 `src/` 的人写。**
-`src/` 由队友 1 负责 → `tests/` 由队友 2 负责。反过来也一样。
-
-**为什么**：让写代码的人自己写测试，他会维护自己的实现逻辑——
-测试只能证明"代码按我想的那样跑"，**不能证明"代码是对的"**。
-
-**2. 写测试前，不许看 `src/` 里的代码。**
-只看 `docs/01-permission-tiers.md` 和 `docs/02-user-stories.md`。
-
-**3. 每条测试上方，写一行注释说明「这条防的是什么」。**
-
----
-
-## 文件命名（一个模块一个文件）
-
-| 文件名 | 测试内容 | 对应文档 |
-|---|---|---|
-| `test_permission.py` | 权限档位判定（绿/黄/红是否正确） | `docs/01` |
-| `test_injection.py` | 注入拦截 | `docs/02` US-11 |
-| `test_hallucination.py` | 幻觉防护 | `docs/02` US-13 |
-| `test_confirm.py` | 确认流程与熔断 | `docs/02` US-09、US-15 |
-| `test_audit.py` | 审计日志（含失败/拒绝也要记录） | `docs/05` |
-| `test_money.py` | 金额计算（整数分） | `docs/02` US-02 |
-| `test_boundary.py` | 边界输入（空、负数、超长、特殊字符） | — |
-
----
-
-## 运行方式
-
-```bash
-cd fintechathon
-python -m pytest tests/ -v
+```powershell
+python -m unittest discover -s tests -p test_acceptance.py -v
 ```
 
-**⚠️ 如果环境里没有 pytest**（按我们的约定不许装第三方库），就用标准库写：
+本机已找到的运行器：
 
-```bash
-python tests/run_all.py
+```powershell
+& 'C:\Users\KindHermit\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m unittest discover -s tests -p test_acceptance.py -v
 ```
 
-**建议用 `tests/run_all.py` + 标准库 `unittest`。** 理由：**不许 pip install**，装了就等于违反了我们自己定的约定，答辩时也说不清。
+每条测试创建 `tests/.runs` 下独立 SQLite 数据库，结束时关闭所有连接并清理这一条测试创建的临时目录。正式/演示数据库不会被测试重置。固定时钟是上海时间 2026-10-10 12:00；跨日、过期与锁定测试明确推进这个测试时钟。
 
----
+测试覆盖三场景、整数分金额、累计边界、执行前复检、归属、确认绑定/否定/超时/重放、联系人真实收款账户绑定、非法取消参数不误停账本、持久化熔断、审计只追加/原子回滚/故障停办、输入与异常脱敏，以及候选依赖计划逐节点确认、失败停止、中断和人工接管。详细输入/期望/实际/运行状态与历史失败见 `docs/09-independent-acceptance.md`。`evidence/independent-acceptance.txt` 按运行顺序保留失败、修复后复跑和最终63条原始输出；最终结果以文件末尾为准。
 
-## 待办
+`FixedCandidateModel`、`BrokenModel` 都是离线测试替身，只为稳定复现不可信模型输出和异常；它们不调用真实模型服务。`audit_hook` 只注入测试故障，不能关闭权限检查。管理员直接插入/修改测试表只是建立竞争条件或异常前置，不代表应用允许用户直接改库。
 
-⬜ 先写 `spec/test-plan.md` 里的用例清单
-⬜ 清单经队长核对后，再落成 `tests/` 里的代码
-⬜ 优先级：**R 类（必须被拒绝的 5 条）> 其余**
-
----
-
-## 边界
-
-- **跑不过的用例不要删。** 留着，记到 `docs/04-known-risks.md`
-- **测试全过 ≠ 系统没问题。** 它只说明"我们想到的那些情况都符合预期"
-- 不允许为了"让测试变绿"而改测试的预期——**那是自欺**
+结果不能代替真实模型完整对话、浏览器人工演示、两位队友的独立人工验收、真实多因素认证或文件/网络/进程隔离实测；这些缺项必须另外记录。测试不设置跳过条件，任何失败或错误都会令命令非零退出。不得为了通过实现而修改业务期望。
