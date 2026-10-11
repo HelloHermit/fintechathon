@@ -8,7 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def main():
-    allowed_suffixes = {".py", ".md", ".ps1", ".txt", ".json"}
+    allowed_suffixes = {".py", ".md", ".ps1", ".txt", ".json", ".html", ".css", ".js"}
     selected_files = []
     for folder_name in ("src", "scripts", "tests", "docs", "spec", "evidence"):
         for path in (PROJECT_ROOT / folder_name).rglob("*"):
@@ -17,6 +17,7 @@ def main():
                 selected_files.append(path)
     selected_files += list(PROJECT_ROOT.glob("*.md"))
     selected_files += [PROJECT_ROOT / ".gitignore", PROJECT_ROOT / ".env.example"]
+    selected_files += [PROJECT_ROOT / "design" / "browser-concept.png"]
     destination_folder = PROJECT_ROOT / "dist"
     destination_folder.mkdir(exist_ok=True)
     shanghai_time = datetime.now(timezone(timedelta(hours=8)))
@@ -28,6 +29,7 @@ def main():
     with zipfile.ZipFile(destination) as archive:
         names = archive.namelist()
         assert not any(name == ".env" or name.endswith((".db", ".pyc")) or "/.runs/" in name for name in names)
+        assert {"src/web_assets/index.html", "src/web_assets/app.css", "src/web_assets/app.js"} <= set(names)
         assert archive.testzip() is None
     print(destination)
     print(f"{len(names)} files; stage snapshot only, not final submission or deadline acceptance.")

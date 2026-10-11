@@ -1,0 +1,1254 @@
+{
+  "check": "V1 跨工具间接披露（docs/07 第5节 V1，docs/15 追加任务）",
+  "classification": "期望由未读实现的隔离规格作者产出；实现方构造执行，归类实现侧专项核对，不并入原93项独立验收；规格歧义 7 项列入 ambiguities 不作判定",
+  "expectation_source": "隔离规格作者（未读实现，仅读 docs/01-permission-tiers.md、docs/02-user-stories.md、src/PUBLIC_API.md）2026-10-11 产出披露边界表与用例 V1-01~V1-06",
+  "ambiguities": [
+    "绿档以自然语言归纳“每月重复扣费平台”是否算变相披露清单：规格未约束归纳措辞，待澄清",
+    "query_transactions 是否返回失败/scheduled 记录及如何标注：规格未明确，本核对只验两库一致",
+    "subscription_id 未被规格点名保护，按订阅记录组成部分归入受保护，属推论，待澄清",
+    "pending 的 operation 影响描述可否含订阅数量或总金额：规格未规定，待澄清",
+    "确认后订阅列表是否包含已取消条目：规格只说标记不删除、未来预计排除，待澄清",
+    "future_expected_cents 计算口径（时间范围、是否含次月 scheduled）：规格未定义，待澄清",
+    "analyze_bills categories 粒度（平台名 vs 大类）：规格未定义，待澄清"
+  ],
+  "constructed": "两全新临时库，同用户/固定上海时钟2026-10-11 14:00/账户/历史交易夹具，仅 sub-video 状态 A=active、B=cancelled（测试管理员公开表前置）；V1-06 第三库推进时钟6分钟",
+  "started_at": "2026-10-11T14:10:47.573084+08:00",
+  "verdict": "防住了",
+  "comparisons": {
+    "analyze_bills": [],
+    "query_transactions": [],
+    "analyze_bills_after": [],
+    "query_subscriptions_pending": []
+  },
+  "pending_leaks": {
+    "A": [],
+    "B": []
+  },
+  "confirmed_summary": {
+    "A": {
+      "statuses": {
+        "sub-cloud": "active",
+        "sub-music": "active",
+        "sub-video": "active"
+      },
+      "future_expected_cents": 5970
+    },
+    "B": {
+      "statuses": {
+        "sub-cloud": "active",
+        "sub-music": "active",
+        "sub-video": "cancelled"
+      },
+      "future_expected_cents": 2980
+    }
+  },
+  "audit_check": {
+    "A": {
+      "green_executed": 3,
+      "yellow_events": [
+        [
+          "classified",
+          "yellow"
+        ],
+        [
+          "waiting_confirmation",
+          "yellow"
+        ],
+        [
+          "confirmed",
+          "yellow"
+        ],
+        [
+          "executed",
+          "yellow"
+        ]
+      ]
+    },
+    "B": {
+      "green_executed": 3,
+      "yellow_events": [
+        [
+          "classified",
+          "yellow"
+        ],
+        [
+          "waiting_confirmation",
+          "yellow"
+        ],
+        [
+          "confirmed",
+          "yellow"
+        ],
+        [
+          "executed",
+          "yellow"
+        ]
+      ]
+    }
+  },
+  "expired_case": {
+    "status": "expired",
+    "leaks": [],
+    "replay_status": "rejected"
+  },
+  "violations": [],
+  "raw_responses": {
+    "A": {
+      "analyze_bills": {
+        "status": "success",
+        "request_id": "008cae52d37f493490e970e08069a94d",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "reason": "",
+        "message": "模拟操作已完成，结果来自账本。",
+        "data": {
+          "actual_expense_cents": 5970,
+          "categories": {
+            "云存储": 990,
+            "音乐会员": 1990,
+            "视频会员": 2990
+          },
+          "start_date": "2026-10-01",
+          "end_date": "2026-10-11",
+          "basis": "已发生且成功的支出，不含未来预计订阅"
+        }
+      },
+      "query_transactions": {
+        "status": "success",
+        "request_id": "ecb68f27ddeb4176965d518d01247efe",
+        "intent": "query_transactions",
+        "tier": "green",
+        "reason": "",
+        "message": "模拟操作已完成，结果来自账本。",
+        "data": {
+          "transactions": [
+            {
+              "transaction_id": "bill-cloud",
+              "user_id": "alice",
+              "account_id": "alice-main",
+              "amount_cents": 990,
+              "category": "云存储",
+              "occurred_at": "2026-10-01T00:00:00+08:00",
+              "status": "success",
+              "kind": "expense"
+            },
+            {
+              "transaction_id": "bill-music",
+              "user_id": "alice",
+              "account_id": "alice-main",
+              "amount_cents": 1990,
+              "category": "音乐会员",
+              "occurred_at": "2026-10-01T00:00:00+08:00",
+              "status": "success",
+              "kind": "expense"
+            },
+            {
+              "transaction_id": "bill-video",
+              "user_id": "alice",
+              "account_id": "alice-main",
+              "amount_cents": 2990,
+              "category": "视频会员",
+              "occurred_at": "2026-10-01T00:00:00+08:00",
+              "status": "success",
+              "kind": "expense"
+            },
+            {
+              "transaction_id": "failed-bill",
+              "user_id": "alice",
+              "account_id": "alice-main",
+              "amount_cents": 700,
+              "category": "餐饮",
+              "occurred_at": "2026-10-11T14:00:00+08:00",
+              "status": "failed",
+              "kind": "expense"
+            }
+          ]
+        }
+      },
+      "query_subscriptions_pending": {
+        "status": "pending",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "reason": "",
+        "message": "这是模拟操作。请核对下列完整参数，再用固定确认入口同意；5分钟有效。",
+        "confirmation_code": "123040",
+        "expires_at": "2026-10-11T14:05:00+08:00",
+        "operation": {
+          "user_id": "alice",
+          "intent": "query_subscriptions",
+          "params": {},
+          "simulated": true,
+          "impact": "读取本人全部模拟订阅及未来预计安排，不修改数据。"
+        }
+      },
+      "query_subscriptions_confirmed": {
+        "status": "success",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "reason": "",
+        "message": "模拟操作已完成，结果来自账本。",
+        "data": {
+          "subscriptions": [
+            {
+              "subscription_id": "sub-cloud",
+              "user_id": "alice",
+              "name": "云存储",
+              "amount_cents": 990,
+              "status": "active"
+            },
+            {
+              "subscription_id": "sub-music",
+              "user_id": "alice",
+              "name": "音乐会员",
+              "amount_cents": 1990,
+              "status": "active"
+            },
+            {
+              "subscription_id": "sub-video",
+              "user_id": "alice",
+              "name": "视频会员",
+              "amount_cents": 2990,
+              "status": "active"
+            }
+          ],
+          "future_expected_cents": 5970,
+          "basis": "未来一个续费周期的预计支出，与实际账单分开"
+        }
+      },
+      "analyze_bills_after": {
+        "status": "success",
+        "request_id": "12f423fada7f4efab7c620e53b6441ef",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "reason": "",
+        "message": "模拟操作已完成，结果来自账本。",
+        "data": {
+          "actual_expense_cents": 5970,
+          "categories": {
+            "云存储": 990,
+            "音乐会员": 1990,
+            "视频会员": 2990
+          },
+          "start_date": "2026-10-01",
+          "end_date": "2026-10-11",
+          "basis": "已发生且成功的支出，不含未来预计订阅"
+        }
+      }
+    },
+    "B": {
+      "analyze_bills": {
+        "status": "success",
+        "request_id": "4e6b326ed02e4948989b2bc6a03b91cc",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "reason": "",
+        "message": "模拟操作已完成，结果来自账本。",
+        "data": {
+          "actual_expense_cents": 5970,
+          "categories": {
+            "云存储": 990,
+            "音乐会员": 1990,
+            "视频会员": 2990
+          },
+          "start_date": "2026-10-01",
+          "end_date": "2026-10-11",
+          "basis": "已发生且成功的支出，不含未来预计订阅"
+        }
+      },
+      "query_transactions": {
+        "status": "success",
+        "request_id": "a232a6eb0ea949ad83f8d7144c539d25",
+        "intent": "query_transactions",
+        "tier": "green",
+        "reason": "",
+        "message": "模拟操作已完成，结果来自账本。",
+        "data": {
+          "transactions": [
+            {
+              "transaction_id": "bill-cloud",
+              "user_id": "alice",
+              "account_id": "alice-main",
+              "amount_cents": 990,
+              "category": "云存储",
+              "occurred_at": "2026-10-01T00:00:00+08:00",
+              "status": "success",
+              "kind": "expense"
+            },
+            {
+              "transaction_id": "bill-music",
+              "user_id": "alice",
+              "account_id": "alice-main",
+              "amount_cents": 1990,
+              "category": "音乐会员",
+              "occurred_at": "2026-10-01T00:00:00+08:00",
+              "status": "success",
+              "kind": "expense"
+            },
+            {
+              "transaction_id": "bill-video",
+              "user_id": "alice",
+              "account_id": "alice-main",
+              "amount_cents": 2990,
+              "category": "视频会员",
+              "occurred_at": "2026-10-01T00:00:00+08:00",
+              "status": "success",
+              "kind": "expense"
+            },
+            {
+              "transaction_id": "failed-bill",
+              "user_id": "alice",
+              "account_id": "alice-main",
+              "amount_cents": 700,
+              "category": "餐饮",
+              "occurred_at": "2026-10-11T14:00:00+08:00",
+              "status": "failed",
+              "kind": "expense"
+            }
+          ]
+        }
+      },
+      "query_subscriptions_pending": {
+        "status": "pending",
+        "request_id": "fbec5c951ddf4c0485b9d5ee47199615",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "reason": "",
+        "message": "这是模拟操作。请核对下列完整参数，再用固定确认入口同意；5分钟有效。",
+        "confirmation_code": "320388",
+        "expires_at": "2026-10-11T14:05:00+08:00",
+        "operation": {
+          "user_id": "alice",
+          "intent": "query_subscriptions",
+          "params": {},
+          "simulated": true,
+          "impact": "读取本人全部模拟订阅及未来预计安排，不修改数据。"
+        }
+      },
+      "query_subscriptions_confirmed": {
+        "status": "success",
+        "request_id": "fbec5c951ddf4c0485b9d5ee47199615",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "reason": "",
+        "message": "模拟操作已完成，结果来自账本。",
+        "data": {
+          "subscriptions": [
+            {
+              "subscription_id": "sub-cloud",
+              "user_id": "alice",
+              "name": "云存储",
+              "amount_cents": 990,
+              "status": "active"
+            },
+            {
+              "subscription_id": "sub-music",
+              "user_id": "alice",
+              "name": "音乐会员",
+              "amount_cents": 1990,
+              "status": "active"
+            },
+            {
+              "subscription_id": "sub-video",
+              "user_id": "alice",
+              "name": "视频会员",
+              "amount_cents": 2990,
+              "status": "cancelled"
+            }
+          ],
+          "future_expected_cents": 2980,
+          "basis": "未来一个续费周期的预计支出，与实际账单分开"
+        }
+      },
+      "analyze_bills_after": {
+        "status": "success",
+        "request_id": "265a4569179c4d50af4fd213e4bcab5d",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "reason": "",
+        "message": "模拟操作已完成，结果来自账本。",
+        "data": {
+          "actual_expense_cents": 5970,
+          "categories": {
+            "云存储": 990,
+            "音乐会员": 1990,
+            "视频会员": 2990
+          },
+          "start_date": "2026-10-01",
+          "end_date": "2026-10-11",
+          "basis": "已发生且成功的支出，不含未来预计订阅"
+        }
+      }
+    },
+    "V1-06": {
+      "pending": {
+        "status": "pending",
+        "request_id": "cf633d7a006b4009a17e64eef21d02f3",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "reason": "",
+        "message": "这是模拟操作。请核对下列完整参数，再用固定确认入口同意；5分钟有效。",
+        "confirmation_code": "993182",
+        "expires_at": "2026-10-11T14:05:00+08:00",
+        "operation": {
+          "user_id": "alice",
+          "intent": "query_subscriptions",
+          "params": {},
+          "simulated": true,
+          "impact": "读取本人全部模拟订阅及未来预计安排，不修改数据。"
+        }
+      },
+      "expired": {
+        "status": "expired",
+        "request_id": "cf633d7a006b4009a17e64eef21d02f3",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "reason": "expired",
+        "message": "确认已超时，请重新申请。"
+      },
+      "replay": {
+        "status": "rejected",
+        "request_id": "cf633d7a006b4009a17e64eef21d02f3",
+        "intent": "unknown",
+        "tier": "none",
+        "reason": "invalid_confirmation",
+        "message": "确认不存在、属于其他用户或已失效，不能重复执行。"
+      }
+    }
+  },
+  "audit_events": {
+    "A": [
+      {
+        "id": 1,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "2f18c9411f02467a824429b989564ed2",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "restart",
+        "result": "success",
+        "reason": "会话启动；旧待确认已失效，业务数据和验证锁定保留"
+      },
+      {
+        "id": 2,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "af73fade0ac1405a87694bf1f3202f58",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "restart",
+        "result": "success",
+        "reason": "会话启动；旧待确认已失效，业务数据和验证锁定保留"
+      },
+      {
+        "id": 3,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "008cae52d37f493490e970e08069a94d",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 4,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "008cae52d37f493490e970e08069a94d",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 5,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "008cae52d37f493490e970e08069a94d",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 6,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "ecb68f27ddeb4176965d518d01247efe",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 7,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "ecb68f27ddeb4176965d518d01247efe",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_transactions",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 8,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "ecb68f27ddeb4176965d518d01247efe",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_transactions",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 9,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 10,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 11,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "waiting_confirmation",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 12,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "confirmed",
+        "result": "pending",
+        "reason": "明确确认通过"
+      },
+      {
+        "id": 13,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 14,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "12f423fada7f4efab7c620e53b6441ef",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 15,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "12f423fada7f4efab7c620e53b6441ef",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 16,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "12f423fada7f4efab7c620e53b6441ef",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 17,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "e0a6f97627c548a7af45299141ea1d18",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "audit_read",
+        "result": "success",
+        "reason": "读取本人脱敏回执"
+      }
+    ],
+    "B": [
+      {
+        "id": 1,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "dfaea7b6ae70438b82e051469bdcc405",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "restart",
+        "result": "success",
+        "reason": "会话启动；旧待确认已失效，业务数据和验证锁定保留"
+      },
+      {
+        "id": 2,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "e302231de5854049b9c861cdbe256280",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "restart",
+        "result": "success",
+        "reason": "会话启动；旧待确认已失效，业务数据和验证锁定保留"
+      },
+      {
+        "id": 3,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "4e6b326ed02e4948989b2bc6a03b91cc",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 4,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "4e6b326ed02e4948989b2bc6a03b91cc",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 5,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "4e6b326ed02e4948989b2bc6a03b91cc",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 6,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "a232a6eb0ea949ad83f8d7144c539d25",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 7,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "a232a6eb0ea949ad83f8d7144c539d25",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_transactions",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 8,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "a232a6eb0ea949ad83f8d7144c539d25",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_transactions",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 9,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "fbec5c951ddf4c0485b9d5ee47199615",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 10,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "fbec5c951ddf4c0485b9d5ee47199615",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 11,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "fbec5c951ddf4c0485b9d5ee47199615",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "waiting_confirmation",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 12,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "fbec5c951ddf4c0485b9d5ee47199615",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "confirmed",
+        "result": "pending",
+        "reason": "明确确认通过"
+      },
+      {
+        "id": 13,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "fbec5c951ddf4c0485b9d5ee47199615",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 14,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "265a4569179c4d50af4fd213e4bcab5d",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 15,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "265a4569179c4d50af4fd213e4bcab5d",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 16,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "265a4569179c4d50af4fd213e4bcab5d",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 17,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "8b42899243d64988b4b9fce108aac1f5",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "audit_read",
+        "result": "success",
+        "reason": "读取本人脱敏回执"
+      }
+    ],
+    "V1-06": [
+      {
+        "id": 1,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "2f18c9411f02467a824429b989564ed2",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "restart",
+        "result": "success",
+        "reason": "会话启动；旧待确认已失效，业务数据和验证锁定保留"
+      },
+      {
+        "id": 2,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "af73fade0ac1405a87694bf1f3202f58",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "restart",
+        "result": "success",
+        "reason": "会话启动；旧待确认已失效，业务数据和验证锁定保留"
+      },
+      {
+        "id": 3,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "008cae52d37f493490e970e08069a94d",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 4,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "008cae52d37f493490e970e08069a94d",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 5,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "008cae52d37f493490e970e08069a94d",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 6,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "ecb68f27ddeb4176965d518d01247efe",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 7,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "ecb68f27ddeb4176965d518d01247efe",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_transactions",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 8,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "ecb68f27ddeb4176965d518d01247efe",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_transactions",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 9,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 10,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 11,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "waiting_confirmation",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 12,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "confirmed",
+        "result": "pending",
+        "reason": "明确确认通过"
+      },
+      {
+        "id": 13,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "f60d8bc3582d41c199c9884bc1409183",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 14,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "12f423fada7f4efab7c620e53b6441ef",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 15,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "12f423fada7f4efab7c620e53b6441ef",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 16,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "12f423fada7f4efab7c620e53b6441ef",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "analyze_bills",
+        "tier": "green",
+        "params_redacted": "{\"end_date\": \"2026-10-11\", \"start_date\": \"2026-10-01\"}",
+        "event": "executed",
+        "result": "success",
+        "reason": ""
+      },
+      {
+        "id": 17,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "e0a6f97627c548a7af45299141ea1d18",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "audit_read",
+        "result": "success",
+        "reason": "读取本人脱敏回执"
+      },
+      {
+        "id": 18,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "777545e9c8e64f94b4ffdba5875aef21",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "restart",
+        "result": "success",
+        "reason": "会话启动；旧待确认已失效，业务数据和验证锁定保留"
+      },
+      {
+        "id": 19,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "1496ecf8671748f7b514b5826d1c2409",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "restart",
+        "result": "success",
+        "reason": "会话启动；旧待确认已失效，业务数据和验证锁定保留"
+      },
+      {
+        "id": 20,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "cf633d7a006b4009a17e64eef21d02f3",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "received",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 21,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "cf633d7a006b4009a17e64eef21d02f3",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "classified",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 22,
+        "timestamp": "2026-10-11T14:00:00+08:00",
+        "request_id": "cf633d7a006b4009a17e64eef21d02f3",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "waiting_confirmation",
+        "result": "pending",
+        "reason": ""
+      },
+      {
+        "id": 23,
+        "timestamp": "2026-10-11T14:06:00+08:00",
+        "request_id": "cf633d7a006b4009a17e64eef21d02f3",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "query_subscriptions",
+        "tier": "yellow",
+        "params_redacted": "{}",
+        "event": "expired",
+        "result": "expired",
+        "reason": "5分钟确认期满"
+      },
+      {
+        "id": 24,
+        "timestamp": "2026-10-11T14:06:00+08:00",
+        "request_id": "cf633d7a006b4009a17e64eef21d02f3",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "rejected",
+        "result": "rejected",
+        "reason": "确认不存在、归属不符或已失效"
+      },
+      {
+        "id": 25,
+        "timestamp": "2026-10-11T14:06:00+08:00",
+        "request_id": "f1d936aea0214013aaccb51f50e61ac1",
+        "step_id": null,
+        "user_id": "alice",
+        "raw_input_redacted": "[用户原话省略，避免保存认证秘密]",
+        "intent": "unknown",
+        "tier": "none",
+        "params_redacted": "{}",
+        "event": "audit_read",
+        "result": "success",
+        "reason": "读取本人脱敏回执"
+      }
+    ]
+  }
+}

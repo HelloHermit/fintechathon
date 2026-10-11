@@ -1,39 +1,41 @@
 # 09 · 隔离独立验收记录
 
-日期：2026-10-10。版本：本轮工作区代码与同日 `src/PUBLIC_API.md` 公开契约；未记录提交号，不将这一结果归属于尚未核对的提交版本。
+日期：首次验收2026-10-10，最近原样复跑2026-10-11。版本：本轮工作区代码与2026-10-10 `src/PUBLIC_API.md` 公开契约；未记录提交号，不将这一结果归属于尚未核对的提交版本。
 
-最终复跑结果：**63 个 unittest 测试通过，0失败、0错误、0跳过，退出码0，耗时10.797s**。原61条设计与业务期望保持不变，新增同行发现问题的两个独立回归用例；最近核心修订后仅原样复跑现有63项一次，不新增测试。复跑曾发现重启事件回执缺失，修复后由原验收作者再次运行；全部历史问题保留于下文。真实模型接入、人工验收或正式赛题全部完成均未由这些测试证明。
+最终总复跑结果：**93 个 unittest 测试通过（66项业务＋27项本机HTTP），0失败、0错误、0跳过，退出码0，耗时11.702s**。2026-10-11隔离复核者先原样复跑原63项一次（5.460s通过），随后从真实证据发现拒绝审计目标缺项，新增64–66三项独立回归；原63项设计与期望未改。66业务单独运行5.825s通过，27项独立HTTP修复后单独运行5.957s通过，最后一次统一discover核对93项全部通过。历史失败保留于下文。真实模型接入、人工验收或正式赛题全部完成均未由这些离线测试证明。
 
 ## 作者隔离与证据范围
 
 测试由独立验收子代理编写，未参与业务实现，未读取业务或模型 Python 源码。设计依据仅为 `AGENTS.md`、`docs/01-permission-tiers.md`、`docs/02-user-stories.md`、`docs/05-audit-log-spec.md`、`spec/test-plan.md` 和公开的 `src/PUBLIC_API.md`。后续接口控制约定更新后，只读取该公开文档，再通过接口观察脱敏响应字段；不依据业务实现猜期望。
 
-测试文件：`tests/test_acceptance.py`。运行方法：`tests/README.md`。本次验收只写这两份文件与本报告，业务修复由实现者完成。
+业务测试文件：`tests/test_acceptance.py`。运行方法：`tests/README.md`。首次验收作者写测试与记录，业务修复由实现者完成；后续复核仍遵守文件分工和作者隔离。
+
+2026-10-11复核者继续与实现隔离，只读业务规格、公开接口、测试工具及脱敏证据；未读取业务/模型源码或本机密钥配置。复核者原样执行63条、修正真实用例运行器的调用统计，并依据真实审计缺项新增三条拒绝日志回归，原63条保持不变。实际联网及业务修复仍由根代理负责；真实异常用例的独立证据审核另见 `docs/13-real-model-acceptance.md`。
 
 每条测试从独立模拟数据库开始，可信用户默认 alice；数据库放在 `tests/.runs` 下，不清空演示数据。夹具金额为 alice-main 1000000、alice-savings 500000、bob-main 100000 分。固定初始时钟为 2026-10-10 12:00（UTC+08:00），各用例明确调整测试时间。SQL 只访问公开表核对余额、历史、累计、请求、锁定和审计；插入 transfers 或修改账户/订阅是异常前置条件，不代表应用授权用户改库。
 
-`FixedCandidateModel` 与 `BrokenModel` 是**离线测试替身**，没有真实模型调用。`audit_hook` 是公开测试故障注入。测试没有跳过机制；不把未测能力算入 63 条。
+`FixedCandidateModel` 与 `BrokenModel` 是**离线测试替身**，没有真实模型调用。`audit_hook` 是公开测试故障注入。测试没有跳过机制；不把未测能力算入66条业务测试。
 
 ## 实际运行
 
 在 `C:\fintechathon` 运行：
 
 ```powershell
-& 'C:\Users\KindHermit\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m unittest discover -s tests -p test_acceptance.py -v
+& 'C:\Users\KindHermit\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 最终原始输出结尾：
 
 ```text
 ----------------------------------------------------------------------
-Ran 63 tests in 10.797s
+Ran 93 tests in 11.702s
 
 OK
 ```
 
-退出码：0。原始逐项输出保存为 `evidence/independent-acceptance.txt`，并保存在本次工具调用记录；证据文件顺序保留9.160s失败运行、9.418s成功复跑、补用例时的导入错误、10.511s新增用例后63条成功输出及10.797s最新原样复跑，不覆盖失败。本报告同时列明全部用例的输入、期望、实际和验证方法。
+退出码：0。原始逐项输出保存为 `evidence/independent-acceptance.txt`，并保存在本次工具调用记录；证据文件顺序保留9.160s失败运行、9.418s成功复跑、补用例时的导入错误、10.511s新增用例后63条成功输出、10.797s原样复跑、2026-10-11的5.460s原63项复跑、5.825s的66项业务输出，以及11.702s的93项业务＋HTTP总复跑。HTTP首轮失败与修复后27项专门输出另存 `evidence/independent-web-acceptance.txt`，均不覆盖失败。本报告列明全部用例的输入、期望、实际和验证方法。
 
-## 逐项结果
+## 66项业务逐项结果
 
 下表每行对应一个 unittest 方法；同一方法中的多个非法类型或表达属于子用例。所有行均已实际运行并通过；32行曾失败，修复后的原样复跑通过，历史单独保留。未运行项另列在后文。公开接口响应断言、公开表前后快照、审计检查均在 `test_acceptance.py` 中可复现。
 
@@ -89,7 +91,7 @@ OK
 | 48 | 模型超时、损坏JSON、None、列表 | 失败/拒绝，不猜候选不发码 | 全部failed/rejected；无业务变化；有新审计 | 四种离线故障替身 | 实际网络故障未验 |
 | 49 | 注入改档、自称bob、模型tier/confirmed、run_shell | 直接拒绝，身份/权限不受模型控制 | 全部rejected，不发码，业务不变 | handle_text不可信候选子用例 | 无法据关键词证明完整注入防御 |
 | 50 | 空白、50000字、SQL样文本 | 不崩溃、不改业务/删表 | failed/rejected，业务与审计表在 | 文本子用例与公开表 | 更大资源压力未验 |
-| 51 | 逆序列出bill→subs→cancel；重复resume；逐节点确认 | 依赖顺序正确；重复resume同码；两黄节点独立确认 | bill先success，subs pending同码同ID；cancel另ID；全部最终success | steps、原码重用拒绝、业务快照与step_id审计 | 真实模型自动规划未接入 |
+| 51 | 逆序列出bill→subs→cancel；重复resume；逐节点确认 | 依赖顺序正确；重复resume同码；两黄节点独立确认 | bill先success，subs pending同码同ID；cancel另ID；全部最终success | steps、原码重用拒绝、业务快照与step_id审计 | 本项只测固定候选；真实模型计划另有独立证据文件 |
 | 52 | 空计划、重复ID、未知依赖、自环/循环、非法工具、假completed、依赖类型、9步、额外confirmed | 非法计划拒绝，不授权/改业务 | 全部rejected，无确认码 | 候选图子用例与快照 | 更复杂图随机生成未验 |
 | 53 | bill之后节点使用bob源账户/bob订阅/额外tier | 不让非法节点进入授权执行 | rejected，无确认码/转账/余额改变 | 图节点参数与公开表 | 此项不要求绿色前置查询一定未读 |
 | 54 | subs→pay，取消subs待确认 | 前置取消停止pay | resume停止，不发码，无转账 | cancel、resume、steps与快照 | 多依赖合并图未单测 |
@@ -102,6 +104,9 @@ OK
 | 61 | subs确认成功但未resume时，提出余额查询新任务，再resume旧plan | 新任务停止旧plan后续取消，不能续用旧授权 | 新查询success；旧resume rejected无码；sub-video仍active | 公开新任务、旧plan回执与业务快照 | 多窗口同时发起未验 |
 | 62 | wang转10000展示bob-main后，SQL将联系人映射改alice-savings；提交并重用旧确认；模型额外提供binding | 真实目标绑定变化使旧授权立即失效；不转到新账户；模型不得指定绑定 | 两次confirm均rejected，全部业务快照相同；额外binding字段在顶层/params均rejected | 公开contacts前置、operation目标、原授权重试及业务快照 | 真实并发映射更新未验 |
 | 63 | cancel传入list、123、dict、bool、float、空串后查询余额 | 非法ID拒绝并审计，健康存储不停办，后续合法查询成功 | 全部rejected；审计新增；随后查询success且只含本人账户，业务不变 | cancel参数子用例、审计条数和后续公开查询 | 未对所有ID格式做随机生成 |
+| 64 | 请求取消不存在的银河影院会员 | not_found/rejected，拒绝审计保留非秘密subscription_name；业务不变 | 同请求rejected日志包含银河影院会员；四表相同 | 公开propose、request_id关联、解析params_redacted | 修复前问题直接来自真实证据，未再跑旧实现 |
+| 65 | transfer候选顶层/params额外提供password、api_key、authorization、otp、authenticator_secret | 非法额外字段拒绝，秘密不进入响应/audit/requests | 10个子用例全部rejected，模拟秘密值均未持久化，四表相同 | 公开候选、审计与requests全文串行化查漏 | 未穷举所有认证字段拼写与未知秘密格式 |
+| 66 | 有效转账确认码塞进新候选顶层、params、无标签订阅目标或验证码标签目标 | 新非法任务拒绝并使旧确认失效，确认秘密不进审计/requests | 4个子用例rejected，旧确认重放rejected，有效码未持久化，无转账 | 先公开pending，记录码仅在测试内存；拒绝后快照、重放与持久记录检查 | 无标签六位文本按公开脱敏规则处理；更复杂编码形式未验 |
 
 ## 本轮曾出现的失败与修复
 
@@ -170,14 +175,71 @@ OK
 - 验证方法：测试作者恢复原方法完整结构，不改变其断言与业务期望，再运行全部63条，10.511s全部通过。
 - 最没把握处：该错误只涉及测试文件加载，不能用于推断业务行为。
 
+### IA-008 · 不存在订阅的拒绝审计丢失目标（真实证据发现，离线修复通过）
+
+- 输入：真实LA-06“请取消我的银河影院会员”，模型明确提出subscription_name=银河影院会员。
+- 期望：not_found/rejected且不改业务；拒绝日志依docs/01第7节与US-30保留非秘密目标和关键参数，同时认证秘密不入库。
+- 原实际：2026-10-11 10:15首轮脱敏证据中，同请求拒绝日志params_redacted={}，原话也整体省略；四表不变，但仅靠审计无法复查目标。复核者直接读取该证据，未读取业务源码。
+- 是否运行：真实首轮由根代理运行；复核者独立审阅并报告。实现者修复后，复核者新增64–66并实际运行66项全量（5.825s、OK、退出0）；原63项不改。
+- 验证方法：只按更新PUBLIC_API安全目标字段契约检查：非秘密subscription_name保留，额外认证字段值不写入；有效确认码进入候选或目标文本时仍脱敏，旧授权重放拒绝，四张业务表无变化。2026-10-11 10:23修复后真实六条复跑也已独立复审通过，LA-06审计保留目标；完整旧证据另存real-model-acceptance-before-audit-fix.json，最新结论详见docs/13。
+- 最没把握处：当前独立离线回归覆盖指定字段/四种码位置，未知编码和所有秘密格式未穷举。
+
+## 独立本机HTTP验收（27项修复后通过，首轮失败保留）
+
+另一个隔离HTTP测试作者只依据AGENTS、权限表、用户故事、PUBLIC_API与WEB_API编写 `tests/test_web_acceptance.py`，没有阅读src/web.py或业务/模型实现，也没有读取.env或请求真实模型。每个主测试新建tests/.runs临时模拟库；SQLite服务在服务线程构造和关闭，客户端通过真实127.0.0.1 HTTP交互。model_configured=True仅标记注入的离线固定候选替身可用，不是真实服务配置/接通证据。
+
+最终单独复跑：**27/27主测试通过，5.957s，退出码0，0失败/错误/跳过**。其后统一93项总复跑再次通过。原始输出保存在 `evidence/independent-web-acceptance.txt`，保留首轮27个主测试中25通过、2失败、6个失败子场景（5.983s，退出1，FAILED (failures=6)）。固定/app.js资源200与未知POST资源404的公开期望保持不变；修复后原作者原样复跑，没有放宽已明确的期望。
+
+运行命令：
+
+```powershell
+& 'C:\Users\KindHermit\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m unittest discover -s tests -p test_web_acceptance.py -v
+```
+
+下表每项均实际运行；编号按测试输出名称顺序归档，和66项业务测试分开计数。首次实际用于保留问题，最后一列为修复后原样27项复跑与统一93项复跑的共同最终结果。
+
+| 编号 | 输入 / 前置 | 期望 | 首轮实际 | 最终实际 |
+|---|---|---|---|---|
+| HTTP-01 | Content-Length缺失、0、-1、非数字、8193 | 400，保留pending，审计追加，业务不变 | 通过 | 通过 |
+| HTTP-02 | 账单查询→订阅查询/确认→视频退订/确认 | 实际5970整数分；订阅先pending后只列本人；退订保留历史 | 通过 | 通过 |
+| HTTP-03 | transfer pending后cancel {}或request_id:null | cancelled，旧confirm rejected，无转账 | 通过 | 通过 |
+| HTTP-04 | 额外password/api_key/authenticator_secret/otp→有效确认→查询/审计 | 400；有效码/CSRF/合成凭据不进requests、audit、模型输入、服务输出及审计响应 | 通过 | 通过 |
+| HTTP-05 | Origin:null/远端/https同host/localhost与127.0.0.1混用 | 403，原pending可继续确认 | 通过 | 通过 |
+| HTTP-06 | Sec-Fetch-Site cross-site/same-site | 403，审计追加，业务/pending不变 | 通过 | 通过 |
+| HTTP-07 | JSON顶层text重复或嵌套id重复 | 400，不调用模型 | 通过 | 通过 |
+| HTTP-08 | 重复Host/Origin/X-CSRF-Token/Content-Length | 400或403拒绝，保留pending | 通过 | 通过 |
+| HTTP-09 | 合法JSON加空白至8192字节，同体8193 | 8192可办理，8193为400，保留pending | 通过 | 通过 |
+| HTTP-10 | 七个POST端点额外user_id:bob或confirmed:true | 400，身份/授权不被请求覆盖 | 通过 | 通过 |
+| HTTP-11 | Host为localhost:端口、同源Origin、same-origin fetch | 200业务success，只列alice两个账户 | 通过 | 通过 |
+| HTTP-12 | 缺失或错误CSRF | 403，有效pending仍可确认 | 通过 | 通过 |
+| HTTP-13 | JSON NaN/Infinity/-Infinity | 400，不调用模型，不改业务 | 通过 | 通过 |
+| HTTP-14 | 数组/null/字符串/数字/bool/损坏JSON/非法UTF-8 | 400，保留pending | 通过 | 通过 |
+| HTTP-15 | bill→subs计划，重复resume、interrupt、旧confirm、再resume | 重复resume保持同码/编号，中断后旧确认与续办不可执行 | 通过 | 通过 |
+| HTTP-16 | 计划takeover→旧confirm→resume | 接管后剩余授权停止 | 通过 | 通过 |
+| HTTP-17 | GET /api/session | 固定alice，只返回user_id/csrf_token/model_configured/simulated；无配置/账本/业务变更 | 通过 | 通过 |
+| HTTP-18 | GET /、/app.css、/app.js | 200、正确类型、安全头，静态不嵌CSRF | /与CSS通过；/app.js实际503，失败 | 通过 |
+| HTTP-19 | 合法10000分转账→confirm一次→同编号同码重放 | 只成功一次，双方990000/110000，储蓄500000；两流水、一转账、一次成功审计；重放rejected | 通过 | 通过 |
+| HTTP-20 | Transfer-Encoding chunked/identity，含或无Content-Length | 400，保留pending | 通过 | 通过 |
+| HTTP-21 | 未知GET、.env、源文件、库文件、明文/编码路径遍历 | 404，追加拒绝审计，pending/业务不变 | 通过 | 通过 |
+| HTTP-22 | 合法POST {}至/candidate、/api/candidate、/api/sql、/api/shell、/api/unknown | 404，无任意候选/SQL/shell入口 | 五项实际400，失败；组末原有效confirm仍success | 通过 |
+| HTTP-23 | PUT/PATCH/DELETE/OPTIONS/HEAD/TRACE | 405、安全头、拒绝审计，保留pending | 通过 | 通过 |
+| HTTP-24 | Host缺失/远端/无端口/端口不匹配 | 403，保留pending | 通过 | 通过 |
+| HTTP-25 | Content-Type缺失/text/plain/form | 400，保留pending | 通过 | 通过 |
+| HTTP-26 | message缺text或text为null/bool/整数/list/object | 400，保留pending | 通过 | 通过 |
+| HTTP-27 | 三个计划端点plan_id为null/bool/整数/list/object | 400，保留pending | 通过 | 通过 |
+
+验证方法：边界拒绝用完整accounts/subscriptions/transactions/transfers快照、原requests行、审计旧前缀/新增rejected及模型调用计数检查；一组边界后原合法确认仍能成功。HTTP-22首轮在状态码断言处失败，其每次审计/快照后续断言当时未执行；修复后五路径均404，后续审计/业务/pending/模型调用断言全部执行通过。安全头核对no-store、nosniff、DENY、本站CSP且无CDN/CORS许可；资金核对双方余额、两条流水、一笔成功转账及关联成功日志；秘密检查仅使用内存有效码/CSRF和合成凭据，不导出本机秘密。
+
+最没把握处：首轮/app.js可能仍处界面开发中的临时缺文件；完成后才据实际复跑确认三个静态资源均200。重复安全头契约未指定400/403的优先级，因此该项允许两者，但未知路径明确要求404。离线HTTP不能证明真实模型理解、浏览器DOM点击/XSS执行、人工演示、远程登录、真实银行、MFA或沙箱。首轮失败仍保留，不把后来通过说成从未出现问题。
+
 ## 尚未完成的验收与能力边界
 
-1. **真实模型完整对话未成功。** 实现者告知真实调用出现HTTP401；本作者未直接运行该真实调用，不把转述当独立证据。当前63条仍使用离线测试替身，不证明AI理解、自动规划或真实服务正常接通，也不计为真实模型验收通过。
+1. **66条离线不证明真实模型；真实证据已另审核。** 本报告的66条仍使用离线替身，不能算真实模型调用。2026-10-11根代理另运行正常三方向五请求及六条独立异常用例；隔离复核者已检查脱敏公开结果、候选（异常用例）、usage、四表与审计。10:23修复后六异常均符合设计，其中5条真实返回共4007 tokens，LA-05输入层阻断；LA-02携带bob-main候选实际触发代码归属拒绝；LA-06初始拒绝日志目标缺项已由新增离线回归和最新真实复跑验证修复。正常复跑、初始较窄结果、旧401/网络失败及过度澄清历史均见docs/13，不再将旧认证失败写成当前尚未接通。
 2. **队友人工未验收。** 本报告不是队友1/Codex API或队友2/DeepSeek Harness的人类验收结果，未声称他们已跑测试；三场景演示、截图/录屏与解释追问需另做。
 3. **并发验收未完成。** 已验证串行重复执行及公开SQLite前置建立的执行前状态变化；没有两个同时执行请求的线程/进程压力证据，不能据此声称并发彻底解决。
 4. **真实多因素认证和隔离未实测。** 红档拒绝路径已测；未测试两个不同身份因素成功后执行，也未做文件/网络/进程/资源越界尝试。屏显六位码仅为操作确认。
-5. **候选依赖执行通过，完整任务规划/补偿回退未完成。** 固定候选图的结构校验、逐节点确认、失败停止、中断、接管与重启失效已测；没有真实模型生成图的证据；已成功转账保留，已取消订阅不能自动恢复。
+5. **候选依赖执行通过，完整任务规划/补偿回退未完成。** 本报告的固定候选图结构校验、逐节点确认、失败停止、中断、接管与重启失效已测。另有evidence/real-model-plans.json真实模型计划集成记录，不能据66条离线本身证明自动规划已完成；既有短计划证据不覆盖任意复杂任务或完整补偿。已成功转账保留，已取消订阅不能自动恢复。
 6. **审计故障证据限定于公开hook。** 已验证成功日志失败回滚、计数与失败日志原子性及实例停办；未模拟真实断电、硬盘损坏或数据库提交底层故障。只追加规则也不抵抗管理员直接改文件/触发器。
-7. **交互渠道人工未验。** 浏览器的确认、刷新、重复点击、过期显示、图状态与可读性不由这些Python测试证明。正式APP/IM渠道认可需另外核实。
+7. **本机HTTP独立27项通过，交互渠道人工另验。** JS固定资源/未知POST状态码初次失败后修复，原样27项与统一93项全部通过，历史保留。真实浏览器的确认、刷新、重复点击、过期显示、图状态与可读性不由离线HTTP/Python测试证明；根代理另做真实浏览器复演，不自动变成两位队友人工验收。正式APP/IM渠道认可需另外核实。
 
 未运行项不得列为“通过”，未实现项不得写成“已满足正式赛题要求”。后续业务改动需用同一命令复跑并记录新版本；规格澄清才允许调整期望。

@@ -1047,6 +1047,82 @@ class AcceptanceTests(unittest.TestCase):
             "active",
         )
 
+    def test_missing_subscription_rejection_audits_the_nonsecret_target(self):
+        """A refusal must still identify the harmless requested subscription."""
+        subscription_name = "银河影院会员"
+        response = self.assert_rejected_without_mutation({
+            "intent": "cancel_subscription",
+            "params": {"subscription_name": subscription_name},
+        })
+        self.assertEqual(response["reason"], "not_found", response)
+        rejections = [
+            event for event in self.bank.audit_events()
+            if event["request_id"] == response["request_id"]
+            and event["result"] == "rejected"
+        ]
+        self.assertTrue(rejections, "Missing request-linked rejection audit")
+        self.assertTrue(any(
+            event["intent"] == "cancel_subscription"
+            and json.loads(event["params_redacted"]).get("subscription_name") == subscription_name
+            for event in rejections
+        ), "Rejection audit omitted the requested nonsecret subscription target")
+
+    def test_rejected_candidates_do_not_persist_credential_fields(self):
+        """Recording refused parameters must not copy extra authentication data."""
+        credential_fields = {
+            "password": "MockPassword_NoDisclosure_671",
+            "api_key": "sk-acceptance-rejected-NODISCLOSURE-8a19",
+            "authorization": "Bearer MockAccess_NoDisclosure_992",
+            "otp": "843219",
+            "authenticator_secret": "MockAuthenticator_NoDisclosure_412",
+        }
+        for field, secret in credential_fields.items():
+            for location in ("candidate", "params"):
+                with self.subTest(field=field, location=location):
+                    candidate = self.transfer()
+                    if location == "candidate":
+                        candidate[field] = secret
+                    else:
+                        candidate["params"][field] = secret
+                    response = self.assert_rejected_without_mutation(candidate)
+                    records = {
+                        "response": response,
+                        "audit": self.query_rows("SELECT * FROM audit_log ORDER BY id"),
+                        "requests": self.query_rows("SELECT * FROM requests ORDER BY request_id"),
+                    }
+                    serialized = json.dumps(records, ensure_ascii=False, default=str)
+                    self.assertNotIn(secret, serialized, "Rejected credential leaked to response/persistence")
+
+    def test_rejected_targets_do_not_persist_an_active_confirmation_secret(self):
+        """A secret moved into an allowed target field remains a secret."""
+        for location in ("candidate_field", "params_field", "target_plain", "target_labelled"):
+            with self.subTest(location=location):
+                pending = self.pending(self.transfer())
+                confirmation_code = pending["confirmation_code"]
+                candidate = {
+                    "intent": "cancel_subscription",
+                    "params": {"subscription_name": "银河影院会员"},
+                }
+                if location == "candidate_field":
+                    candidate["confirmation_code"] = confirmation_code
+                elif location == "params_field":
+                    candidate["params"]["confirmation_code"] = confirmation_code
+                elif location == "target_plain":
+                    candidate["params"]["subscription_name"] += " " + confirmation_code
+                else:
+                    candidate["params"]["subscription_name"] += " 验证码=" + confirmation_code
+                response = self.assert_rejected_without_mutation(candidate)
+                replay = self.confirm_pending(pending)
+                self.assertEqual(replay["status"], "rejected", replay)
+                records = {
+                    "response": response,
+                    "replay": replay,
+                    "audit": self.query_rows("SELECT * FROM audit_log ORDER BY id"),
+                    "requests": self.query_rows("SELECT * FROM requests ORDER BY request_id"),
+                }
+                serialized = json.dumps(records, ensure_ascii=False, default=str)
+                self.assertNotIn(confirmation_code, serialized, "Confirmation secret leaked in a refused target")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

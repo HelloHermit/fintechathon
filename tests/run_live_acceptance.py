@@ -128,8 +128,9 @@ def evaluate_case(case_id, turns, calls, before, after, audit, replay):
     actual_calls = [
         call for call in calls
         if call.get("returned_candidate") and isinstance(call.get("candidate"), dict)
-        and (isinstance(call["candidate"].get("intent"), str) or isinstance(call["candidate"].get("steps"), list))
     ]
+    # A genuine clarification dictionary also counts as a provider response.
+    # Candidate meaning remains subject to each case's checks/manual review.
     transfers = transfer_candidates(calls)
     results = {event.get("result") for event in audit}
     checks = {

@@ -20,6 +20,8 @@ def connect(database_path):
 
 def initialize(connection, now):
     """建表并仅在全新数据库中种入可手算的模拟夹具。"""
+    # 迁移旧防重放表时清理被删除的数据库页；外部备份仍须另行保管。
+    connection.execute("PRAGMA secure_delete=ON")
     connection.executescript("""
     CREATE TABLE IF NOT EXISTS users(user_id TEXT PRIMARY KEY, name TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS accounts(
@@ -50,6 +52,14 @@ def initialize(connection, now):
         user_id TEXT NOT NULL REFERENCES users, intent TEXT NOT NULL,
         failures INTEGER NOT NULL DEFAULT 0, locked_until TEXT,
         PRIMARY KEY(user_id,intent));
+    CREATE TABLE IF NOT EXISTS strong_auth(
+        user_id TEXT PRIMARY KEY REFERENCES users,
+        password_hash TEXT NOT NULL, password_salt TEXT NOT NULL,
+        kdf_iterations INTEGER NOT NULL, totp_secret TEXT NOT NULL,
+        enrolled_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS strong_auth_replay(
+        user_id TEXT NOT NULL REFERENCES users, step INTEGER NOT NULL,
+        used_at TEXT NOT NULL, PRIMARY KEY(user_id,step));
     CREATE TABLE IF NOT EXISTS audit_log(
         id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT NOT NULL,
         request_id TEXT NOT NULL, step_id TEXT, user_id TEXT NOT NULL,
@@ -61,11 +71,30 @@ def initialize(connection, now):
     CREATE TRIGGER IF NOT EXISTS audit_no_delete BEFORE DELETE ON audit_log
         BEGIN SELECT RAISE(ABORT,'audit log is append only'); END;
     """)
-    request_columns = {row[1] for row in connection.execute("PRAGMA table_info(requests)")}
-    if "binding_json" not in request_columns:
-        connection.execute("ALTER TABLE requests ADD COLUMN binding_json TEXT NOT NULL DEFAULT '{}'")
     connection.execute("BEGIN IMMEDIATE")
     try:
+        replay_columns = {row[1] for row in connection.execute("PRAGMA table_info(strong_auth_replay)")}
+        if replay_columns == {"user_id", "code", "step", "used_at"}:
+            # 同一用户、同一时间步曾存有不同原码时，合并为一个已用时间步。
+            # 新表、复制、删除旧表及改名一起提交；任一步失败则保留原表。
+            connection.execute("""CREATE TABLE strong_auth_replay_migrated(
+                user_id TEXT NOT NULL REFERENCES users, step INTEGER NOT NULL,
+                used_at TEXT NOT NULL, PRIMARY KEY(user_id,step))""")
+            connection.execute("""INSERT INTO strong_auth_replay_migrated(user_id,step,used_at)
+                SELECT user_id,step,MAX(used_at) FROM strong_auth_replay GROUP BY user_id,step""")
+            connection.execute("DROP TABLE strong_auth_replay")
+            connection.execute("ALTER TABLE strong_auth_replay_migrated RENAME TO strong_auth_replay")
+        elif replay_columns != {"user_id", "step", "used_at"}:
+            raise sqlite3.DatabaseError("unsupported strong authentication replay schema")
+        replay_primary_key = {
+            row[1]: row[5] for row in connection.execute("PRAGMA table_info(strong_auth_replay)")
+            if row[5]
+        }
+        if replay_primary_key != {"user_id": 1, "step": 2}:
+            raise sqlite3.DatabaseError("invalid strong authentication replay primary key")
+        request_columns = {row[1] for row in connection.execute("PRAGMA table_info(requests)")}
+        if "binding_json" not in request_columns:
+            connection.execute("ALTER TABLE requests ADD COLUMN binding_json TEXT NOT NULL DEFAULT '{}'")
         if connection.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
             connection.executemany("INSERT INTO users VALUES(?,?)", [("alice", "小阚"), ("bob", "小王")])
             connection.executemany("INSERT INTO accounts VALUES(?,?,?)", [

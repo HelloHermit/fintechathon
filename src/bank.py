@@ -10,6 +10,8 @@ from contextlib import contextmanager
 from datetime import datetime, date, timedelta
 
 from .storage import SHANGHAI, connect, initialize
+from .strong_auth import (TOTP_STEP_SECONDS, hash_password, match_totp,
+                          normalize_totp_secret, verify_password)
 
 INTENTS = {"query_balance", "query_transactions", "analyze_bills",
            "query_subscriptions", "cancel_subscription", "transfer"}
@@ -38,10 +40,14 @@ class BankService:
         self.confirmation_secrets = {}
         self.halted = False
         self.connection = connect(database_path)
-        initialize(self.connection, self._now())
-        if not self.connection.execute("SELECT 1 FROM users WHERE user_id=?", (user_id,)).fetchone():
+        try:
+            initialize(self.connection, self._now())
+            if not self.connection.execute("SELECT 1 FROM users WHERE user_id=?", (user_id,)).fetchone():
+                raise ValueError("未知模拟用户；身份只能在可信启动配置中指定。")
+        except Exception:
+            # 迁移或初始化失败也必须释放账本，避免失败会话留下文件句柄。
             self.connection.close()
-            raise ValueError("未知模拟用户；身份只能在可信启动配置中指定。")
+            raise
         try:
             with self._transaction():
                 self._invalidate_pending("restart", "会话重启，旧确认失效")
@@ -67,12 +73,19 @@ class BankService:
             raise
 
     def _audit(self, request_id, intent, tier, event, result, reason="", params=None, step_id=None):
-        """只记录代码接受的安全参数，原话省略，确认秘密从不持久化。"""
-        safe_params = dict(params or {})
+        """记录受限字段的脱敏候选/执行参数，不让失败请求丢失安全目标。"""
+        safe_params = self._audit_parameters(intent, params)
         if intent == "transfer":
             stored_request = self.connection.execute("SELECT binding_json FROM requests WHERE request_id=? AND user_id=?", (request_id, self.user_id)).fetchone()
             if stored_request:
-                safe_params.update(json.loads(stored_request[0]))
+                try:
+                    binding = json.loads(stored_request[0])
+                except (ValueError, TypeError):
+                    binding = {}
+                if type(binding) is dict:
+                    target = binding.get("target_account_id")
+                    if type(target) is str and target:
+                        safe_params["target_account_id"] = "[已脱敏]" if len(target) > 80 or SECRET_PATTERN.search(target) or re.search(r"[0-9]{6}", target) or any(ord(character) < 32 for character in target) or self._contains_enrolled_secret(target) else target
         event_record = dict(timestamp=self._now().isoformat(), request_id=request_id,
                             step_id=step_id, user_id=self.user_id,
                             raw_input_redacted="[用户原话省略，避免保存认证秘密]",
@@ -88,6 +101,31 @@ class BankService:
                 :tier,:params_redacted,:event,:result,:reason)""", event_record)
         except Exception as error:
             raise AuditUnavailable("审计不可用，已停止处理") from error
+
+    def _audit_parameters(self, intent, params):
+        """日志字段白名单只用于追查，不能给候选授予执行权限。"""
+        fields = {
+            "query_balance": {"account_id"},
+            "query_transactions": {"account_id", "start_date", "end_date"},
+            "analyze_bills": {"account_id", "start_date", "end_date"},
+            "query_subscriptions": set(),
+            "cancel_subscription": {"subscription_id", "subscription_name"},
+            "transfer": {"account_id", "contact_id", "contact_name", "amount_cents"},
+        }.get(intent, set())
+        if type(params) is not dict:
+            return {}
+        result = {}
+        for field in fields:
+            value = params.get(field)
+            if field == "amount_cents":
+                if type(value) is int and abs(value) <= 10**12:
+                    result[field] = value
+            elif type(value) is str and value:
+                if len(value) > 80 or SECRET_PATTERN.search(value) or re.search(r"[0-9]{6}", value) or any(ord(character) < 32 for character in value) or self._contains_enrolled_secret(value):
+                    result[field] = "[已脱敏]"
+                else:
+                    result[field] = value
+        return result
 
     def _response(self, status, request_id, intent="unknown", tier="none", reason="", message="", **extra):
         return dict(status=status, request_id=request_id, intent=intent, tier=tier,
@@ -253,14 +291,15 @@ class BankService:
                 return self._prepare_plan(candidate, request_id)
             submitted_intent = candidate.get("intent") if type(candidate) is dict else None
             intent = submitted_intent if type(submitted_intent) is str and submitted_intent in INTENTS else "unknown"
-            params, tier = {}, "none"
+            params = self._audit_parameters(intent, candidate.get("params") if type(candidate) is dict else None)
+            tier = "none"
             try:
                 intent, params = self._validate(candidate)
                 self._locked(intent, request_id)
                 tier = self._tier(intent, params)
                 self._audit(request_id, intent, tier, "classified", "pending", params=params)
-                if tier == "red":
-                    raise RuleError("strong_verification_unavailable", "日累计超过1000元：真实不同身份因素验证及受限执行环境尚未就绪，拒绝执行。", "red")
+                if tier == "red" and not self._strong_enrollment():
+                    raise RuleError("strong_verification_unavailable", "日累计超过1000元：强验证未登记且受限执行环境未就绪，拒绝执行。", "red")
                 now = self._now()
                 expires = now + timedelta(minutes=5)
                 binding = {}
@@ -270,6 +309,9 @@ class BankService:
                 self.connection.execute("INSERT INTO requests(request_id,user_id,intent,params_json,tier,status,created_at,expires_at,binding_json) VALUES(?,?,?,?,?,?,?,?,?)", (request_id, self.user_id, intent, json.dumps(params, ensure_ascii=False, sort_keys=True), tier, "pending", now.isoformat(), expires.isoformat(), json.dumps(binding, sort_keys=True)))
                 if tier == "green":
                     return self._execute(request_id, intent, params, tier)
+                if tier == "red":
+                    self._audit(request_id, intent, tier, "waiting_strong_verification", "pending", params=params)
+                    return self._response("pending", request_id, intent, tier, message="日累计超过1000元。请用固定强验证入口提供本人密码与认证器动态码；5分钟有效。验证通过仍需受限隔离就绪，本轮红档业务不放行。", expires_at=expires.isoformat(), operation=self._operation(intent, params, request_id))
                 code = f"{secrets.randbelow(1000000):06d}"
                 self.confirmation_secrets[request_id] = code
                 self._audit(request_id, intent, tier, "waiting_confirmation", "pending", params=params)
@@ -360,7 +402,7 @@ class BankService:
         with self._transaction():
             request = self.connection.execute("SELECT * FROM requests WHERE request_id=? AND user_id=?", (request_id if type(request_id) is str else "", self.user_id)).fetchone()
             if not request or request["status"] != "pending":
-                safe_id = request_id if type(request_id) is str and re.fullmatch(r"[0-9a-f]{32}", request_id) else uuid.uuid4().hex
+                safe_id = request_id if type(request_id) is str and re.fullmatch(r"[0-9a-f]{32}", request_id) and not self._contains_enrolled_secret(request_id) else uuid.uuid4().hex
                 self._audit(safe_id, "unknown", "none", "rejected", "rejected", "确认不存在、归属不符或已失效")
                 return self._response("rejected", safe_id, reason="invalid_confirmation", message="确认不存在、属于其他用户或已失效，不能重复执行。")
             intent, tier = request["intent"], request["tier"]
@@ -370,6 +412,9 @@ class BankService:
                 self.confirmation_secrets.pop(request_id, None)
                 self._audit(request_id, intent, tier, "expired", "expired", "5分钟确认期满", params)
                 return self._response("expired", request_id, intent, tier, "expired", "确认已超时，请重新申请。")
+            if tier == "red":
+                self._audit(request_id, intent, tier, "rejected", "rejected", "strong_verification_required", params)
+                return self._response("rejected", request_id, intent, tier, "strong_verification_required", "红档请求须用固定强验证入口（本人密码+认证器动态码）；六位确认通道不适用，本次不计失败。")
             try:
                 self._locked(intent, request_id)
             except RuleError as error:
@@ -399,6 +444,150 @@ class BankService:
                     if step["request_id"] == request_id:
                         step["data"] = response.get("data", {})
             return response
+
+    def strong_verify(self, request_id, password, totp_code, *, confirmed=False):
+        """本人核对并同意本次操作后验证两因素；本轮仍不执行红档业务。"""
+        return self._guarded(lambda: self._strong_verify(request_id, password, totp_code, confirmed))
+
+    def _strong_enrollment(self):
+        return self.connection.execute("SELECT * FROM strong_auth WHERE user_id=?", (self.user_id,)).fetchone()
+
+    def _contains_enrolled_secret(self, text):
+        """拦住本人已知秘密的常见误粘贴；不保留或枚举明文口令。"""
+        if type(text) is not str:
+            return False
+        enrollment = self._strong_enrollment()
+        if not enrollment:
+            return False
+        normalized_secret = normalize_totp_secret(enrollment["totp_secret"])
+        compact_text = "".join(text.split()).upper()
+        if normalized_secret and normalized_secret in compact_text:
+            return True
+        password_candidates = (text,) if text == text.strip() else (text, text.strip())
+        return any(verify_password(candidate, enrollment["password_hash"], enrollment["password_salt"], enrollment["kdf_iterations"]) for candidate in password_candidates)
+
+    def _strong_failure(self, request_id, intent, tier, params):
+        """统一失败路径：不区分密码错、动态码错或重放，计数持久化。"""
+        self.connection.execute("INSERT INTO verification_state(user_id,intent,failures) VALUES(?,?,1) ON CONFLICT(user_id,intent) DO UPDATE SET failures=failures+1", (self.user_id, intent))
+        failures = self.connection.execute("SELECT failures FROM verification_state WHERE user_id=? AND intent=?", (self.user_id, intent)).fetchone()[0]
+        self._audit(request_id, intent, tier, "verification_failed", "rejected", f"验证失败，连续{failures}次", params)
+        if failures >= 3:
+            locked_until = self._now() + timedelta(minutes=10)
+            self.connection.execute("UPDATE verification_state SET locked_until=? WHERE user_id=? AND intent=?", (locked_until.isoformat(), self.user_id, intent))
+            self._audit(request_id, intent, tier, "locked", "rejected", "连续3次验证失败，锁定10分钟", params)
+        return self._response("rejected", request_id, intent, tier, "locked" if failures >= 3 else "verification_failed", "强验证失败（不区分密码或动态码）；连续3次失败锁定该类操作10分钟。")
+
+    def _expire_strong_request(self, request_id, intent, tier, params):
+        """校验过程中也可能跨过期限；过期不消费因素、不清失败计数。"""
+        self.connection.execute("UPDATE requests SET status='expired' WHERE request_id=?", (request_id,))
+        self._audit(request_id, intent, tier, "expired", "expired", "5分钟强验证期满", params)
+        return self._response("expired", request_id, intent, tier, "expired", "请求已超时，请重新申请。")
+
+    def _strong_verify(self, request_id, password, totp_code, confirmed):
+        with self._transaction():
+            request = self.connection.execute("SELECT * FROM requests WHERE request_id=? AND user_id=?", (request_id if type(request_id) is str else "", self.user_id)).fetchone()
+            if not request or request["status"] != "pending" or request["tier"] != "red":
+                safe_id = request_id if type(request_id) is str and re.fullmatch(r"[0-9a-f]{32}", request_id) and not self._contains_enrolled_secret(request_id) else uuid.uuid4().hex
+                self._audit(safe_id, "unknown", "none", "rejected", "rejected", "强验证目标不存在、归属不符、非红档或已失效")
+                return self._response("rejected", safe_id, reason="invalid_confirmation", message="强验证目标不存在、属于其他用户、非红档或已失效，本次不计失败。")
+            intent, tier = request["intent"], request["tier"]
+            params = json.loads(request["params_json"])
+            expires_at = datetime.fromisoformat(request["expires_at"])
+            if self._now() >= expires_at:
+                return self._expire_strong_request(request_id, intent, tier, params)
+            try:
+                self._locked(intent, request_id)
+            except RuleError as error:
+                self._audit(request_id, intent, tier, "rejected", "rejected", error.reason, params)
+                return self._response("rejected", request_id, intent, tier, error.reason, error.message)
+            if confirmed is not True:
+                self._audit(request_id, intent, tier, "rejected", "rejected", "explicit_confirmation_required", params)
+                return self._response("rejected", request_id, intent, tier, "explicit_confirmation_required", "请先核对本次完整操作，再由本人在认证专用入口明确确认；尚未校验身份因素。")
+            try:
+                checked_intent, checked_params = self._validate({"intent": intent, "params": params})
+                binding = json.loads(request["binding_json"])
+                contact = self.connection.execute("SELECT account_id FROM contacts WHERE contact_id=? AND user_id=?", (params.get("contact_id"), self.user_id)).fetchone()
+                if checked_intent != "transfer" or checked_params != params or not contact or type(binding) is not dict or binding.get("target_account_id") != contact[0]:
+                    raise RuleError("invalid_confirmation", "操作参数或实际收款目标已改变，旧授权失效。")
+            except (RuleError, ValueError, TypeError):
+                self.connection.execute("UPDATE requests SET status='rejected' WHERE request_id=?", (request_id,))
+                self._audit(request_id, intent, tier, "rejected", "rejected", "invalid_confirmation", params)
+                return self._response("rejected", request_id, intent, tier, "invalid_confirmation", "操作参数、归属、余额或收款绑定不再有效；请重新申请，本次未校验因素。")
+            enrollment = self._strong_enrollment()
+            if not enrollment:
+                self._audit(request_id, intent, tier, "rejected", "rejected", "strong_verification_unavailable", params)
+                return self._response("rejected", request_id, intent, tier, "strong_verification_unavailable", "本人强验证未登记，红档拒绝。")
+            password_ok = type(password) is str and verify_password(password, enrollment["password_hash"], enrollment["password_salt"], enrollment["kdf_iterations"])
+            verification_time = self._now()
+            if verification_time >= expires_at:
+                return self._expire_strong_request(request_id, intent, tier, params)
+            matched_offset = match_totp(enrollment["totp_secret"], totp_code, verification_time.timestamp()) if password_ok else None
+            replay_hit = False
+            if matched_offset is not None:
+                matched_step = int(verification_time.timestamp() // TOTP_STEP_SECONDS) + matched_offset
+                replay_hit = self.connection.execute("SELECT 1 FROM strong_auth_replay WHERE user_id=? AND step=?", (self.user_id, matched_step)).fetchone() is not None
+            if self._now() >= expires_at:
+                return self._expire_strong_request(request_id, intent, tier, params)
+            if not password_ok or matched_offset is None or replay_hit:
+                return self._strong_failure(request_id, intent, tier, params)
+            # 审计写入也可能耗时。提交前跨过期限就撤销本次全部认证元数据。
+            self.connection.execute("SAVEPOINT strong_auth_validation")
+            self._audit(request_id, intent, tier, "confirmed", "pending", "本人明确同意本次绑定操作", params)
+            self.connection.execute("INSERT INTO strong_auth_replay(user_id,step,used_at) VALUES(?,?,?)", (self.user_id, matched_step, verification_time.isoformat()))
+            self.connection.execute("INSERT INTO verification_state(user_id,intent,failures) VALUES(?,?,0) ON CONFLICT(user_id,intent) DO UPDATE SET failures=0,locked_until=NULL", (self.user_id, intent))
+            self._audit(request_id, intent, tier, "strong_verified", "success", "两种不同身份因素验证通过", params)
+            self.connection.execute("UPDATE requests SET status='rejected' WHERE request_id=?", (request_id,))
+            self._audit(request_id, intent, tier, "rejected", "rejected", "isolation_unavailable", params)
+            if self._now() >= expires_at:
+                self.connection.execute("ROLLBACK TO strong_auth_validation")
+                self.connection.execute("RELEASE strong_auth_validation")
+                return self._expire_strong_request(request_id, intent, tier, params)
+            self.connection.execute("RELEASE strong_auth_validation")
+            return self._response("rejected", request_id, intent, tier, "isolation_unavailable", "两种身份因素验证通过；受限执行隔离尚未实测，红档业务继续拒绝，未改动任何业务数据。", strong_verification="passed")
+
+    def enroll_strong_auth(self, password, totp_secret, totp_code=None):
+        """本机登记须在代码层验证持有证明；合成测试不等于真人登记。"""
+        return self._guarded(lambda: self._enroll_strong_auth(password, totp_secret, totp_code))
+
+    def _enroll_strong_auth(self, password, totp_secret, totp_code):
+        with self._transaction():
+            if type(password) is not str or not 8 <= len(password) <= 128:
+                self._audit(uuid.uuid4().hex, "unknown", "none", "rejected", "rejected", "invalid_password_format")
+                return self._response("rejected", "", reason="invalid_password_format", message="密码须为8至128个字符。")
+            normalized = normalize_totp_secret(totp_secret)
+            if normalized is None:
+                self._audit(uuid.uuid4().hex, "unknown", "none", "rejected", "rejected", "invalid_totp_secret")
+                return self._response("rejected", "", reason="invalid_totp_secret", message="认证器秘密须为有效base32且解码后至少20字节。")
+            if self._strong_enrollment():
+                self._audit(uuid.uuid4().hex, "unknown", "none", "rejected", "rejected", "already_enrolled")
+                return self._response("rejected", "", reason="already_enrolled", message="本人已登记强验证；如需更换请先重置。")
+            enrollment_time = self._now()
+            offset = match_totp(normalized, totp_code, enrollment_time.timestamp())
+            matched_step = int(enrollment_time.timestamp() // TOTP_STEP_SECONDS) + offset if offset is not None else None
+            if matched_step is None or self.connection.execute("SELECT 1 FROM strong_auth_replay WHERE user_id=? AND step=?", (self.user_id, matched_step)).fetchone():
+                self._audit(uuid.uuid4().hex, "unknown", "none", "rejected", "rejected", "invalid_totp_code")
+                return self._response("rejected", "", reason="invalid_totp_code", message="持有证明未通过或该时间步已使用，未登记；请等待新的动态码后重试。")
+            try:
+                digest, salt_hex, iterations = hash_password(password)
+            except (ValueError, TypeError, UnicodeError):
+                self._audit(uuid.uuid4().hex, "unknown", "none", "rejected", "rejected", "invalid_password_format")
+                return self._response("rejected", "", reason="invalid_password_format", message="密码格式无法处理，未登记。")
+            self.connection.execute("INSERT INTO strong_auth VALUES(?,?,?,?,?,?)", (self.user_id, digest, salt_hex, iterations, normalized, enrollment_time.isoformat()))
+            self.connection.execute("INSERT INTO strong_auth_replay(user_id,step,used_at) VALUES(?,?,?)", (self.user_id, matched_step, enrollment_time.isoformat()))
+            self._audit(uuid.uuid4().hex, "unknown", "none", "strong_auth_enrolled", "success", "本人完成密码与认证器登记，秘密不入日志")
+            return self._response("success", "", message="强验证登记完成。", data={"user_id": self.user_id, "factors": ["password", "totp"]})
+
+    def unenroll_strong_auth(self):
+        """本地管理重置只删登记；旧请求失效，已用步和失败锁定保留。"""
+        return self._guarded(lambda: self._unenroll_strong_auth())
+
+    def _unenroll_strong_auth(self):
+        with self._transaction():
+            self._invalidate_pending("strong_auth_reset", "本人重置认证登记，旧授权失效")
+            self._invalidate_plans()
+            self.connection.execute("DELETE FROM strong_auth WHERE user_id=?", (self.user_id,))
+            self._audit(uuid.uuid4().hex, "unknown", "none", "strong_auth_reset", "success", "本人强验证登记已删除，可重新登记")
+            return self._response("success", "", message="本人强验证登记已删除。")
 
     def cancel(self, request_id=None):
         return self._guarded(lambda: self._cancel(request_id))
@@ -435,7 +624,7 @@ class BankService:
             self._audit(request_id, "unknown", "none", "received", "pending")
             invalid = type(text) is not str or not text.strip() or len(text) > 2000
             injected = not invalid and any(word in text.lower() for word in INJECTION)
-            has_secret = not invalid and SECRET_PATTERN.search(text)
+            has_secret = not invalid and (SECRET_PATTERN.search(text) or self._contains_enrolled_secret(text))
             if invalid or injected or has_secret:
                 reason = "invalid_input" if invalid else "secret_input" if has_secret else "injection_blocked"
                 self._audit(request_id, "unknown", "none", "rejected", "rejected", reason)
@@ -520,6 +709,8 @@ class BankService:
                     step["status"] = "expired"
                 if step["status"] == "pending":
                     # 重复续跑不生成新码、不改变原授权。
+                    if request["tier"] == "red":
+                        return self._response("pending", step["request_id"], step["intent"], "red", message="该红档步骤须用固定强验证入口（密码+动态码）；验证通过仍需隔离就绪，本轮不放行。", expires_at=request["expires_at"], operation=self._operation(step["intent"], step["params"], step["request_id"]), plan_id=plan_id, plan=self._plan_snapshot(plan))
                     return self._response("pending", step["request_id"], step["intent"], "yellow", message="该步骤仍待固定确认入口确认。", confirmation_code=self.confirmation_secrets[step["request_id"]], expires_at=request["expires_at"], operation=self._operation(step["intent"], step["params"], step["request_id"]), plan_id=plan_id, plan=self._plan_snapshot(plan))
                 if step["status"] != "success":
                     plan["status"] = "failed"
@@ -584,6 +775,16 @@ class BankService:
                 self._audit(uuid.uuid4().hex, "unknown", "none", "audit_read", "success", "读取本人脱敏回执")
                 return [dict(row) for row in self.connection.execute("SELECT * FROM audit_log WHERE user_id=? ORDER BY id", (self.user_id,))]
         return self._guarded(read)
+
+    def reject_request(self, reason="invalid_http_request"):
+        """本机HTTP入口记录格式/来源拒绝，不消费或改变业务授权。"""
+        safe_reason = reason if type(reason) is str and reason in {"invalid_http_request", "http_access_denied"} else "invalid_http_request"
+        def reject():
+            request_id = uuid.uuid4().hex
+            with self._transaction():
+                self._audit(request_id, "unknown", "none", "rejected", "rejected", safe_reason)
+            return self._response("rejected", request_id, reason=safe_reason, message="请求格式或来源未通过本机入口检查，未办理业务。")
+        return self._guarded(reject)
 
     def close(self):
         if not self.halted:

@@ -1,7 +1,10 @@
 ﻿param(
     [string]$DatabasePath = "data/bank.db",
     [ValidateSet("alice", "bob")]
-    [string]$User = "alice"
+    [string]$User = "alice",
+    [switch]$Web,
+    [ValidateRange(1024, 65535)]
+    [int]$Port = 8765
 )
 
 # 不安装依赖、不重置数据库。只寻找能运行标准库原型的 Python 3.10+。
@@ -45,7 +48,10 @@ Push-Location -LiteralPath $projectDirectory
 try {
     $env:PYTHONUTF8 = "1"
     Write-Host "启动模拟银行原型；已有数据库不会重置。"
-    $launchArguments = $pythonArguments + @("-m", "src.main", "--db", $DatabasePath, "--user", $User)
+    $moduleName = "src.main"
+    if ($Web) { $moduleName = "src.web" }
+    $launchArguments = $pythonArguments + @("-m", $moduleName, "--db", $DatabasePath, "--user", $User)
+    if ($Web) { $launchArguments += @("--port", $Port) }
     & $pythonExecutable @launchArguments
     $exitCode = $LASTEXITCODE
 } finally {
