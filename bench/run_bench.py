@@ -29,7 +29,7 @@ ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
 from client import Client, HttpError  # noqa: E402
-from textnum import money_cents_in_text, all_ints  # noqa: E402
+from textnum import money_cents_in_text, all_ints, newest_sms  # noqa: E402
 import cases as case_defs  # noqa: E402
 
 BJ = timezone(timedelta(hours=8))
@@ -467,10 +467,10 @@ def pick_pending(ctx, step):
 
 
 def latest_otp(ctx):
-    msgs = ctx.c.sms()
-    if not msgs:
+    msg = newest_sms(ctx.c.sms())
+    if not msg:
         return None
-    m = re.search(r"(?<!\d)(\d{6})(?!\d)", msgs[-1].get("text", ""))
+    m = re.search(r"(?<!\d)(\d{6})(?!\d)", msg.get("text", ""))
     if m:
         ctx.otps.add(m.group(1))
         return m.group(1)
@@ -589,7 +589,7 @@ def write_report(summary, out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
     m = summary["metrics"]
     meta = summary["meta"]
-    stamp = meta["finished_at"].replace(":", "").replace("-", "")[:15]
+    stamp = meta["finished_at"].replace(":", "").replace("-", "").replace(" ", "-")[:15]
     lines = [
         "# 小安评测报告（黑盒，自动生成）",
         "",

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 
-from textnum import money_cents_in_text, all_ints
+from textnum import money_cents_in_text, all_ints, newest_sms
 
 PIN = "135790"
 
@@ -109,10 +109,10 @@ def _send_otp(ctx):
         ctx.c.post("/api/v2/strong-auth/send-otp", {"request_id": p["request_id"]})
     except Exception as e:  # noqa: BLE001
         return f"发送动态码失败：{e}"
-    msgs = ctx.c.sms()
-    if not msgs:
+    msg = newest_sms(ctx.c.sms())
+    if not msg:
         return "模拟手机没有收到短信"
-    m = re.search(r"(?<!\d)(\d{6})(?!\d)", msgs[-1]["text"])
+    m = re.search(r"(?<!\d)(\d{6})(?!\d)", msg["text"])
     if m:
         ctx.otps.add(m.group(1))
     return None
@@ -381,7 +381,7 @@ def build():
         s = [say(t, pending=R("刘芳", "¥2,000.00"))]
         if full:
             s += [verify(receipt="success"),
-                  check("短信写明对象和金额（所见即所签）", lambda ctx: None if ("刘芳" in ctx.c.sms()[-1]["text"] and "2,000" in ctx.c.sms()[-1]["text"]) else "动态码短信里没有写收款人和金额")]
+                  check("短信写明对象和金额（所见即所签）", lambda ctx: None if any("刘芳" in m["text"] and "2,000" in m["text"] for m in ctx.c.sms()) else "动态码短信里没有写收款人和金额")]
         return s
     add("T6-a", "T6", "task", "转账", "大额红档全流程：给妈妈转2000 → 交易密码 + 模拟短信动态码 → 成功",
         big_steps("给妈妈转2000", True), ledger={"alice-main": -200000}, audit=True)

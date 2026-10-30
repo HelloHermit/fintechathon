@@ -11,7 +11,8 @@ let first = true;
 export async function pollSms() {
   try {
     const r = await api.simPhone();
-    const msgs = r.messages || [];
+    // 收件箱顺序没有约定，统一按收到时间从旧到新排
+    const msgs = (r.messages || []).map((m, i) => [m, i]).sort((a, b) => String(a[0].received_at || "").localeCompare(String(b[0].received_at || "")) || b[1] - a[1]).map(([m]) => m);
     const fresh = msgs.filter((m) => !state.smsSeen.has(m.id));
     state.sms = msgs;
     fresh.forEach((m) => state.smsSeen.add(m.id));

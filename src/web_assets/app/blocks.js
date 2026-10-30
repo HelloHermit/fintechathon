@@ -120,7 +120,7 @@ function anomaly_list(d) {
     title("异常交易识别", h("span.muted.small", { text: `${items.length} 处发现` })),
     sorted.length ? sorted.map((it) => h(`div.anomaly.${it.severity || "low"}`, null,
       h("div.anomaly-head", null, chip(SEVERITY_LABEL[it.severity] || it.severity, it.severity === "high" ? "danger" : it.severity === "medium" ? "warn" : ""),
-        h("span.anomaly-rule", { text: it.rule || "" })),
+        h("span.anomaly-rule", { text: RULE_TEXT[it.rule] || it.rule || "" })),
       h("div.anomaly-main", null,
         h("div", null, h("div.txn-merchant", { text: it.merchant || "" }), h("div.muted.small", { text: fmtTime(it.time) })),
         h("div.money", { text: yuan(it.amount_cents, { sign: true }) })),
@@ -131,6 +131,8 @@ function anomaly_list(d) {
           onclick: () => sendAction("block_action", it.finding_id, { intent: a.intent, params: a.params || {} }, a.label),
         }, a.label))) : null)) : h("div.empty", { text: "没有发现异常交易" }));
 }
+
+const RULE_TEXT = { unusual_card_spend: "异常消费（凌晨/境外/新商户/金额异常）", small_probe: "小额试探（盗刷前兆）", duplicate_charge: "疑似重复扣款", suspicious_incoming: "可疑来账", price_increase: "订阅涨价" };
 
 function report(d) {
   const kindText = d.kind === "annual" ? "年度报告" : "月度账单报告";

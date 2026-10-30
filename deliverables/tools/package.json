@@ -1,0 +1,14 @@
+{
+  "name": "xiaoan-deliverables-tools",
+  "private": true,
+  "description": "把 docs/diagrams/*.mmd 渲染成 SVG/PNG，把 Markdown 文档导出 PDF（用已安装的 Playwright Chromium）",
+  "scripts": {
+    "diagrams": "node build_docs.js diagrams",
+    "pdf": "node build_docs.js pdf",
+    "all": "node build_docs.js all"
+  },
+  "dependencies": {
+    "marked": "14.1.4",
+    "mermaid": "11.4.1"
+  }
+}

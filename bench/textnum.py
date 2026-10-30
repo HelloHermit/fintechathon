@@ -33,3 +33,10 @@ def all_ints(obj, acc=None):
         for v in obj:
             all_ints(v, acc)
     return acc
+
+
+def newest_sms(msgs):
+    """模拟手机收件箱的顺序接口没有约定：按 received_at 取最新（同一时间取列表里靠前的）。"""
+    if not msgs:
+        return None
+    return max(enumerate(msgs), key=lambda im: (im[1].get("received_at") or "", -im[0]))[1]
