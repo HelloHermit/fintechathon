@@ -1,0 +1,170 @@
+{
+  "completed_at_utc": "2026-10-28T17:37:31.434267+00:00",
+  "task_file": "C:/Kind_Hermit/Kind_Hermit/task2/未命名 15.md",
+  "scope": "Six specified simulated directions complete; human and formal competition acceptance remain separate",
+  "source_sha256": "05f3035fed4463db211b6d2a9361fcae2d3af09d2b84854e5a1efb5381044f77",
+  "source_hashes": {
+    "scripts/closeout_check.py": "9ca189131e6611099110ea900032837f06a9b61b39a260e74ff91bec670b5d9f",
+    "scripts/configure-model.ps1": "d9c1d26fbd6a2a800a1af90e6983ffd53024c59d4b3e420fb975579c4eeeee7b",
+    "scripts/demo.py": "dc8b1dbf563efe9148f0ed38ae161dc8a30a7e4ea3aedc9a11b7ee02f2a85c78",
+    "scripts/docker_isolation_check.py": "cc2d616f8e73e67c770209c556ace4345367422b7e1f6360a3628f2cdbf7fc62",
+    "scripts/docker_isolation_setup.py": "a659cdea895fb19a13c93af0cf4f2ee03e601bb0e4ff7ba9c8435eb86eeb3868",
+    "scripts/isolation_check.py": "92af40907ee3d463e933a143b52fbfa6b48ab985907c09b5b6fb2625d8d9fdeb",
+    "scripts/isolation_setup.py": "c5efc9b2d354eb3f3be282708a91396c54164bd926efc4690802e7b47e4ce873",
+    "scripts/live_demo.py": "6ae5e6c9d5b5c093adcad30e74b50b3ead9b3fdeda0a170f780d8096dc3713cc",
+    "scripts/live_plan_demo.py": "c796f02d030035129de63df33ee6f6bf330c8e60e330df747290e98c328a91c2",
+    "scripts/mfa_enroll.py": "6d2eb7a869002efefede5c94dab5073f7dd4653eca593d6a20fbdf1753e66d2b",
+    "scripts/mfa_verify.py": "4dc4878f8ef762f4fe77f9bc3f0b4da8b992229f1fdfa020b01efd0cc721931e",
+    "scripts/package.py": "985367568e26d8ff66766313fae43d5ccb8788ec90deac8af7c751ed69f2e479",
+    "scripts/recovery.py": "97b648f0611772b8563085fd0a7202767a67714a8efb955c10183dbd663be447",
+    "scripts/six_check.py": "149d4de548c1817c72bd214a7ec2fa755845f62f84c0a11fb69aa4d1d54da194",
+    "scripts/six_live_check.py": "3eb15b84db9f2f5826bd92a6d3d2cc788304615409aaa56d96f042859e0329c5",
+    "scripts/six_package_check.py": "31791e9be0d40101fe279fd918966d478d77168e62478e0949cabcb665eaf89c",
+    "scripts/stage_check.py": "784375c2e5f4b91f3d27c02af79b7ebcc97ad9d5df46a02ddc6659342b5691c3",
+    "scripts/start.ps1": "2518c06cea6ab7937679b0628ffafdbae133dbeef1ea8211e3a28403ff4f4d6b",
+    "scripts/v1_disclosure_check.py": "77c65b160fd83fa4bd24c31d467ceabd6ae95b70fc38183be7b144b34ff945f3",
+    "scripts/v2_concurrency_check.py": "739f36ff036db4c5f094fd6b07b36a78d0e4c026f91d64a85fcbd2962cdb09d1",
+    "src/__init__.py": "22d40ad2e85ae11815a8731787c29d93b7665a8b5f75e6a0e83b787a83fb2a51",
+    "src/bank.py": "77da38b327f1bb4a4c7d0bc420c78f239ee73a57525400af19e94d7a24234358",
+    "src/conversation.py": "54dd761d358f9504e2c2ca11e4b7ca460b12f61c2e4f38e68f4aed7b6bb240d1",
+    "src/docker_isolation.py": "7e61c44f158951f16e502747a542e5cbee223ee7559b143a66420294f5b48fae",
+    "src/isolation.py": "3c44d23ab4cebf72589841a5c7fad6a12be9d30d8da13b5832d6210db67d9053",
+    "src/isolation_supervisor.py": "93f692e0cf628078431619609bd8bf3edb22198e1948ea2954a56b54452f8694",
+    "src/isolation_worker.py": "aa63b4cc0e43d76e9f272ebb48ee35c5b464bca341a23f68e97015f9466b06ab",
+    "src/main.py": "1fa2d410253bbb236620ca2b108dc3cffc79e740ed6691ab29c6324919b8913c",
+    "src/model.py": "ee1238fc54de05922b2b37def5c24ed32b49647da44518c27712dec6a8d03502",
+    "src/recovery_state.py": "ceb14973ddece0e6ff0bf35bad0461eb31c33675980fe99817bb99fc85aa182d",
+    "src/six_calculator.py": "17da23b6d34e6a12b87c3d0cb23acdc7a872816b0a3a2328e9a66d96960170c4",
+    "src/six_conversation.py": "6061fcba16c5933ebd5f0c2bf464a0f1aec6274154cf32e62fe74ea709975bd5",
+    "src/six_scenarios.py": "2e6f86ce0edf5b59f00a2faf9dc081d8b87116a581e1241f12ef2ebd4d191e42",
+    "src/storage.py": "7ab84649d48597a2688d190ce4a1d636f894c7576f8d5b1255561a3ae209c03b",
+    "src/strong_auth.py": "fa3d3a7e5c60c61dbbeb17161e7d2089362f07588c8a8ec43397e62e38f6a869",
+    "src/web.py": "0ffac678b08f6f94875b9c7f022eebca600236ee3c3a043fc8586a89a8a5695e",
+    "src/web_assets/app.css": "235b224fd1b39fdc1e679c1dc65ddf27aa5cdba784c5a1a94ea226f59bd3b7a2",
+    "src/web_assets/app.js": "70c043e6b787f0aef6a8b876571ff60cfee15e1ca37898b6f2f821db407ed6ec",
+    "src/web_assets/index.html": "a9727d3ba4749136f1209d320ec91f2ed4dfc1a04993cfbcfcb0afcc8d7aa9be",
+    "src/windows_isolation.py": "c5ce270339bc872839c9608ac0d4c21c6da8903735f8db810c499eb15269c948",
+    "tests/run_context_live_acceptance.py": "52d3504f503acd5eea5e9b6eb505720e9533453814ad716f12fa1389fe2b14d8",
+    "tests/run_live_acceptance.py": "3ed6f11ae2823d18f7d780fd68ba9d3884671e485dcbf9dd79945666c501df13",
+    "tests/run_six_live_acceptance.py": "e4e9f81d3c691c0572504366f0516821a9246e0bf992ded269c774ca56fab939",
+    "tests/test_acceptance.py": "75087e25694c6943723c220daf67e110ad71e6298c284cf3ff5109bdc8b0571f",
+    "tests/test_closeout_independent.py": "9caf4a8e0f5172c1864502944ebce2f1cc476ac6efe59a0c5dd956295c1db937",
+    "tests/test_context_independent.py": "f58bcaa2ec4b5199a16b3d8c668ca5a4b6eba2b1bfa5b2b71b80e68640ccf996",
+    "tests/test_docker_isolation_independent.py": "291a58f283c74dcc2163b3b80e4f33e590d0dcf7825b0c3ea63c84aedfd122fa",
+    "tests/test_isolation_independent.py": "986b41f932f064e30e5765459b91d67f2cfa230411dfb6753800fb08aff2b1f0",
+    "tests/test_mfa_independent_acceptance.py": "a74deae8386b83407d3b853c2ca0ad7c4bacd9e9ae4deca440612ca21b07cd09",
+    "tests/test_recovery_independent.py": "ae2b3f59f909456c2a34d546bb0a8c59756955dceeee6cf95d7cd1f30860b21e",
+    "tests/test_six_independent.py": "11887cfdff0b714d196482e8f4eb52f1cee1a8541f6420bdda33887434f0d37e",
+    "tests/test_v1_permission_boundary.py": "7ba7bac4588922becc8694f10fe43be41fa30a2cd86f52810f4e064d901b292b",
+    "tests/test_v2_process_concurrency.py": "3d9e6380586b029b7b009ec19b4a1c8f3d5773532eb38f6054dc9734392547b5",
+    "tests/test_web_acceptance.py": "678de4da513106bc246ae25ca1cd6ae522d194efde3cf2b1764ab14cecc16058"
+  },
+  "archive": {
+    "path": "dist\\fintechathon-six-scenarios-20261028.zip",
+    "sha256": "c18dec0a92e8faa0b9330a4d4f4c89b29823c5934bef3431d1d29f6a9c0539a4"
+  },
+  "package_manifest_sha256": "96b8004238c2f43ce2ecb733c879b81061b3e2230f1b4ffa9bdea90875d71457",
+  "package_file_count": 341,
+  "unpacked_acceptance": {
+    "methods": 293,
+    "groups": [
+      159,
+      45,
+      37,
+      52
+    ],
+    "includes_real_Docker_S50": true,
+    "source_and_protected_unchanged": true,
+    "startup_restarts": 2,
+    "evidence": {
+      "path": "evidence\\six-package-check-20261028-172700-443291.json",
+      "sha256": "0c7dbceb8c6b9c12dd307eae33e29b548dd0c8a63a10353c0cb241c832cf13c6"
+    }
+  },
+  "independent_Docker33": {
+    "path": "evidence\\docker-isolation-run-20261028-165949-501172.json",
+    "sha256": "c6dba6d41da4fa85746d3dddc642f1ac23bbea1dd6c5b30b7a823a93efe07a21"
+  },
+  "final_UI": {
+    "path": "evidence\\six-ui-validation-20261028-172316-862429.json",
+    "sha256": "21d9040660ff0c32c7d6f768bd8159c306ac2229b5da1f9e8f31173b2d420325"
+  },
+  "version_bridge": {
+    "path": "evidence\\six-version-proof-20261028-171951-427599.json",
+    "sha256": "e9348b6d9f4bfaa90505073a4c5ba5b1d7be0d2586b9a59c619f13c7f4534978"
+  },
+  "real_model": {
+    "batches": [
+      {
+        "path": "evidence\\six-live-run-20261028-165953-422354.json",
+        "sha256": "2251370b2d07da170aafc1b6db8f54fe5c0f7fd4e22d945edd08fdd33f49593e"
+      },
+      {
+        "path": "evidence\\six-live-run-20261028-171541-238824.json",
+        "sha256": "7e3e0c0b37f436e7d813191b7855ac87c8104f8580c9ef268ffea3bf1e38c8d4"
+      },
+      {
+        "path": "evidence\\six-live-run-20261028-171955-229821.json",
+        "sha256": "04c27fb8d6f500884c5ffc415d456eb9efe1aebb9db0f843941f5e557625be51"
+      }
+    ],
+    "groups_completed": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "completed_across_three_preserved_batches": true,
+    "adapter_calls": 30,
+    "reported_transport_attempts": 30,
+    "usage": {
+      "prompt_tokens": 63214,
+      "completion_tokens": 1124,
+      "total_tokens": 64338
+    },
+    "reported_model_label": "deepseek-flash",
+    "label_is_not_model_weights_fingerprint": true,
+    "cost": null
+  },
+  "independent_review": {
+    "path": "docs\\40-six-independent-acceptance.md",
+    "sha256": "af270628bea4640b5d86037882b391e3e7557eaab4ba50c317f50a92c6f834d4"
+  },
+  "protected_originals_equal_stage_baseline": true,
+  "protected_hashes": {
+    "data/bank.db": "aa7c627bb3b699bc5f88c3e86ea0c61fc65b08861e6c4374c01e58faddc46d74",
+    "dist/fintechathon-six-scenarios-20261028.zip": "c18dec0a92e8faa0b9330a4d4f4c89b29823c5934bef3431d1d29f6a9c0539a4",
+    "dist/prototype-closeout-20261011-8085df6684d1.zip": "aa7de5eb7f6fd11d36fccd3550568d11d85c6da54faa230f797083945a4e2766",
+    "dist/prototype-stage-20261010-203220-444488.zip": "92fc94089aa4887d8a30123a5dc351486b9806e6353151f67d06e04d6ec1a56e",
+    "dist/prototype-stage-20261011-104806-037678.zip": "b908b9b0b5022aa1a379e77add04525f1b8797753815109b51efa33fb44e0d82"
+  },
+  "runtime_cleanup": [
+    {
+      "runtime": "docker-runtime-six-20261025-a1",
+      "owned_containers_remaining": [],
+      "probe_files_remaining": 0
+    },
+    {
+      "runtime": "docker-runtime-six-ui-20261028",
+      "owned_containers_remaining": [],
+      "probe_files_remaining": 0
+    },
+    {
+      "runtime": "docker-runtime-six-live-20261028",
+      "owned_containers_remaining": [],
+      "probe_files_remaining": 0
+    }
+  ],
+  "limitations": [
+    "All bank, product, card, service, funds and platform behavior simulated",
+    "No background scheduler, real payment credentials, real bank/merchant contact or dynamic result references",
+    "No automatic refund/reverse transfer; budget release requires separate confirmation",
+    "Human phone/terminal/teammate and formal channel acceptance deferred; red tier remains refused",
+    "Finite fixed Chinese inputs; browser mobile viewport is not a physical phone; Windows isolation limitations remain"
+  ]
+}

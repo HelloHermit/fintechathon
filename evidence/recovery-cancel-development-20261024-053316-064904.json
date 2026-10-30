@@ -1,0 +1,94 @@
+{
+  "scope": "implementation staged development checks, not independent acceptance",
+  "started_at_utc": "2026-10-24T05:33:16.064904+00:00",
+  "finished_at_utc": "2026-10-24T05:33:18.726290+00:00",
+  "source_hashes": {
+    "bank.py": "3c8257ab646c7fd7db538a7f44171a69462fdf03db381e376c27215e435f969c",
+    "storage.py": "5d56c724d444e569fb5c46511a5d2b5b5543cd40ec08ed21bcfb046959a2c12d",
+    "recovery_state.py": "6cba5444821770c49f132c0c6916a74dcb4dd71b830a65234b626dc059cd7093"
+  },
+  "production_source_modified": false,
+  "cases": [
+    {
+      "case": "prepared",
+      "status": "cancelled",
+      "recovery_status": "blocked",
+      "stop_reason": "user_cancelled",
+      "financial_unchanged": true,
+      "committed_transfers": 0,
+      "restart_remains_blocked": true
+    },
+    {
+      "case": "authorized",
+      "status": "cancelled",
+      "recovery_status": "blocked",
+      "stop_reason": "user_cancelled",
+      "financial_unchanged": true,
+      "committed_transfers": 0,
+      "restart_remains_blocked": true
+    },
+    {
+      "case": "natural_prepared",
+      "status": "cancelled",
+      "recovery_status": "blocked",
+      "stop_reason": "user_cancelled",
+      "financial_unchanged": true,
+      "committed_transfers": 0,
+      "restart_remains_blocked": true
+    },
+    {
+      "case": "natural_authorized",
+      "status": "cancelled",
+      "recovery_status": "blocked",
+      "stop_reason": "user_cancelled",
+      "financial_unchanged": true,
+      "committed_transfers": 0,
+      "restart_remains_blocked": true
+    },
+    {
+      "case": "original_ready",
+      "status": "cancelled",
+      "recovery_status": "blocked",
+      "stop_reason": "user_cancelled",
+      "financial_unchanged": true,
+      "committed_transfers": 1,
+      "restart_remains_blocked": true
+    },
+    {
+      "case": "recovered_ready",
+      "status": "cancelled",
+      "recovery_status": "blocked",
+      "stop_reason": "user_cancelled",
+      "financial_unchanged": true,
+      "committed_transfers": 1,
+      "restart_remains_blocked": true
+    },
+    {
+      "case": "explicit_pending",
+      "status": "cancelled",
+      "recovery_status": "blocked",
+      "stop_reason": "user_cancelled",
+      "financial_unchanged": true,
+      "committed_transfers": 0,
+      "restart_remains_blocked": true
+    },
+    {
+      "case": "unknown_explicit",
+      "status": "rejected",
+      "reason": "no_pending",
+      "current_review_preserved": true,
+      "financial_unchanged": true
+    },
+    {
+      "case": "audit_fault",
+      "status": "failed",
+      "reason": "audit_unavailable",
+      "financial_unchanged": true,
+      "saved_recovery_status": "review_pending"
+    }
+  ],
+  "passed": 9,
+  "normal_database_used": false,
+  "real_model_calls": 0,
+  "prior_failure": "tests/.runs/task2-backend-stage/recovery-cancel-s_ky54wu/observation.json"
+}

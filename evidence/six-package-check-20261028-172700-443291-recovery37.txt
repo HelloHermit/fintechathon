@@ -1,0 +1,2 @@
+{"suite": "recovery", "passed": true, "tests_run": 37, "exit_code": 0, "source_unchanged": true, "protected_unchanged": true, "version_sha256": "05f3035fed4463db211b6d2a9361fcae2d3af09d2b84854e5a1efb5381044f77"}
+C:\fintechathon\tests\.runs\six-unpacked-20261028-172700-443291-b2fac96f6d564e6d87b15ee47cb8373f\evidence\six-recovery-run-20261028-173133-192371.json

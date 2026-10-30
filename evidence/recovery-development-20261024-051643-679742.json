@@ -1,0 +1,35 @@
+{
+  "scope": "implementation development checks, not independent acceptance",
+  "started_at_utc": "2026-10-24T05:16:43.679742+00:00",
+  "finished_at_utc": "2026-10-24T05:17:02.334492+00:00",
+  "elapsed_seconds": 18.639999999984866,
+  "source_before": {
+    "src/bank.py": "54a9017cb01c4dba847c9fee5a06f2b86f8755291213b32064f2c1d61d2a1e40",
+    "src/storage.py": "5d56c724d444e569fb5c46511a5d2b5b5543cd40ec08ed21bcfb046959a2c12d",
+    "src/recovery_state.py": "512c4639698368ecc34f27f59b7d1e4364bc8658c61fc66ed286e1229feb6b31"
+  },
+  "source_after": {
+    "src/bank.py": "54a9017cb01c4dba847c9fee5a06f2b86f8755291213b32064f2c1d61d2a1e40",
+    "src/storage.py": "5d56c724d444e569fb5c46511a5d2b5b5543cd40ec08ed21bcfb046959a2c12d",
+    "src/recovery_state.py": "512c4639698368ecc34f27f59b7d1e4364bc8658c61fc66ed286e1229feb6b31"
+  },
+  "source_unchanged": true,
+  "normal_database_opened": false,
+  "model_calls": 0,
+  "regression_command": "python -B -X utf8 -m unittest discover -s tests -p test_acceptance.py -v",
+  "regression_exit_code": 0,
+  "regression_output": "evidence/recovery-development-20261024-051643-679742.txt",
+  "staged_history": {
+    "earlier_66_methods": "passed, 19.076 seconds; historical staged check only",
+    "fault_evidence": [
+      "tests/.runs/task2-backend-stage/faults-g10g14u0/development-evidence.json",
+      "tests/.runs/task2-backend-stage/faults-3gpqx3i3/development-evidence.json"
+    ],
+    "limits": "staged evidence is implementation-authored; current source identity is recorded above"
+  },
+  "published_files": [
+    "src/bank.py",
+    "src/storage.py",
+    "src/recovery_state.py"
+  ]
+}

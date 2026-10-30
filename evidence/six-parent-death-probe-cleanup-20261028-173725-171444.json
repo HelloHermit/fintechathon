@@ -1,0 +1,18 @@
+{
+  "observed_at_utc": "2026-10-28T17:37:25.171444+00:00",
+  "owned_containers_remaining_before_cleanup": [],
+  "removed": [
+    {
+      "path": ".isolation\\docker-runtime-six-20261025-a1\\tasks\\58cf0894dab4423a91a267bd5e23fb16.py",
+      "sha256": "cb94675f209584af2dfb98cc09ab98f3cb372d4b52762c86d75cdb453dc94185",
+      "preserved_copy": "tests\\.runs\\parent-death-probe-preserved-58cf0894dab4423a91a267bd5e23fb16.py.txt"
+    },
+    {
+      "path": ".isolation\\docker-runtime-six-20261025-a1\\tasks\\d8b437345bbf4c2a82ef4c142d5c42ea.py",
+      "sha256": "cb94675f209584af2dfb98cc09ab98f3cb372d4b52762c86d75cdb453dc94185",
+      "preserved_copy": "tests\\.runs\\parent-death-probe-preserved-d8b437345bbf4c2a82ef4c142d5c42ea.py.txt"
+    }
+  ],
+  "probe_files_remaining_after_cleanup": 0,
+  "reason": "Independent parent-death experiments intentionally kill the host probe parent, which cannot run its Python file-removal finally block. These are fixed test-owned stdout-loop copies, not live processes. Trusted closeout verified zero owned containers, preserved exact copies, and removed only these two files. This is explicit cleanup, not a claim of automatic host-file cleanup after parent death."
+}
