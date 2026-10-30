@@ -214,3 +214,20 @@ PlanSummary = 只含 `plan_id,title,status,created_at,node_count,done_count`。
 ## 4. 前端开发用的假数据
 
 会话 B 在 `src/web_assets/mock/` 放各接口的示例 JSON（按本文件结构），页面带 `?mock=1` 时用假数据。会话 A 不读不改这个目录。真实后端可用后，B 去掉对假数据的依赖，但保留它作为离线截图用途。
+
+## 5. 会话 A 增补（全部向后兼容，只加字段/接口，不改已有字段含义）
+
+### 5.1 2026-10-30 · v2.0.1
+
+- **新接口** `GET /api/v2/pending` → `{"items":[PendingOperation]}`：当前用户还没确认、没过期的待确认单（刷新页面后恢复用）。**这里不返回 `confirmation_code`**（确认码只在生成单子的那个 TurnResponse 里出现一次）；黄档单刷新后如果前端丢了确认码，请让用户重新发起。
+- **可以同时存在多张待确认单**：只有“同一对象”（同一收款人、同一张卡、同一产品……）的新单会让旧单作废（例如“改成300”）。不同对象的单可以并存（例如“给小王转500，再给小张转200”）。
+- `TurnResponse.error` 可能多两个字段：`reason`（细分原因，例如 `auth_failed`、`risk_ack_required`、`cooling_off`、`confirm_failed`、`expired`、`duplicate`、`reauth_required`）和 `detail`（例如 `{"remaining_attempts": 2}`、`{"not_before": "…"}`）。确认/强验证失败时 `pending` 会带回原单，前端可以留在面板上让用户重试。
+- `POST /api/v2/strong-auth/send-otp` 在 60 秒内重发时返回 **HTTP 429**：`{"error":{"code":"rate_limited","message":"…","resend_after_seconds": 37}}`。
+- `receipt.status` 取值：`success`（已执行）、`scheduled`（定时转账已设置，或延时到账资金已转出在途）。
+- `PendingOperation.risk.arrival_options` 对定时转账是空数组（定时转账不能选到账方式）。高风险（≥60）单默认到账方式是“24 小时后到账”，`lines` 里的“到账方式”会写明。
+- `Scheduled` 里延时到账中的转账带 `"revocable": true`，`schedule_id` 是转账编号。
+- `Insight` 可能多带：`contact_id`、`days_left`（生日）、`count`（续费/异常的数量）。
+- `Report.kpis[]` 多带 `value_cents`（数值型 KPI 的整数分，非金额为 `null`），方便画图。
+- `Session` 多带 `"simulated": true`。
+- `GET /api/v2/transactions` 多返回 `total_count`；不带 `from` 时默认从 2025-01-01 起。
+- 演示交易密码 `135790`；动态码只出现在 `GET /api/v2/sim-phone`。

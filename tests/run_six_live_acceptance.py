@@ -580,7 +580,7 @@ def choose_directory(value):
 
 
 def source_hashes():
-    paths = (ROOT / "src/SIX_SCENARIO_API.md", ROOT / "src/CONTEXT_API.md", ROOT / "docs/39-six-live-matrix.md", Path(__file__).resolve())
+    paths = (ROOT / "src/SIX_SCENARIO_API.md", ROOT / "src/CONTEXT_API.md", ROOT / "docs/history/39-six-live-matrix.md", Path(__file__).resolve())
     return {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
 
 

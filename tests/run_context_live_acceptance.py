@@ -608,9 +608,9 @@ def seed_fixture(path, identifier):
 
 
 def fingerprints():
-    paths = [SCRIPT, ROOT / "AGENTS.md", ROOT / "docs/01-permission-tiers.md",
-             ROOT / "docs/02-user-stories.md", ROOT / "docs/33-context-planning-acceptance-matrix.md",
-             ROOT / "docs/34-context-independent-acceptance.md", ROOT / "docs/34a-context-live-matrix.md",
+    paths = [SCRIPT, ROOT / "docs/history/AGENTS-codex-era.md", ROOT / "docs/history/01-permission-tiers.md",
+             ROOT / "docs/history/02-user-stories.md", ROOT / "docs/history/33-context-planning-acceptance-matrix.md",
+             ROOT / "docs/history/34-context-independent-acceptance.md", ROOT / "docs/history/34a-context-live-matrix.md",
              ROOT / "src/PUBLIC_API.md", ROOT / "src/CONTEXT_API.md", ROOT / "src/RECOVERY_API.md"]
     return {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
 
