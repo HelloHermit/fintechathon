@@ -1,0 +1,7 @@
+SHA256; filenames relative to this dist directory; the ZIP remains unchanged.
+c18dec0a92e8faa0b9330a4d4f4c89b29823c5934bef3431d1d29f6a9c0539a4  fintechathon-six-scenarios-20261028.zip
+96b8004238c2f43ce2ecb733c879b81061b3e2230f1b4ffa9bdea90875d71457  fintechathon-six-scenarios-20261028-manifest.json
+2ebcbf5186cbc7e505faf0057f2f356f94712aaf46a3e3b06540c96a92ddb1e8  ../docs/42-six-package-verification.md
+0c7dbceb8c6b9c12dd307eae33e29b548dd0c8a63a10353c0cb241c832cf13c6  ../evidence/six-package-check-20261028-172700-443291.json
+5cfbda6bf29ac13c21347c12a960364a58a8ec0fc2291198714c63768fe4baf9  ../evidence/six-delivery-20261028-173731-444281.json
+4da4337a4ff192ee559d786d811ae5f275b0702bbb9cc5c5494be76c6520b972  ../evidence/six-normal-web-start-20261029-001515-684180.json
