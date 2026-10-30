@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>银行 AI 助手 · 模拟原型</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#message-input">跳到输入框</a>
+  <div class="app-shell">
+    <aside class="task-sidebar" aria-label="任务示例">
+      <div class="brand">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="m3 10 13-7 13 7H3Zm2 17h22M7 13v11m6-11v11m6-11v11m6-11v11"/></svg>
+        <span>银行 AI 助手</span>
+      </div>
+      <nav class="task-nav" aria-label="填入一个示例，不会自动发送">
+        <h2>开始一个任务</h2>
+        <button class="example-button" type="button" data-example="这个月已经花了多少？">
+          <svg class="task-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="3"/><path d="M8 7h8M8 11h8m-8 4h4"/></svg>
+          <span><strong>账单分析</strong><small>看看本月已发生的支出</small></span>
+          <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 4 4 4-4 4"/></svg>
+        </button>
+        <button class="example-button" type="button" data-example="我有哪些自动扣款？">
+          <svg class="task-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="17" rx="3"/><path d="M7 2v6m10-6v6M3 11h18m-13 4h5"/></svg>
+          <span><strong>订阅与代扣</strong><small>查看或取消模拟订阅</small></span>
+          <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 4 4 4-4 4"/></svg>
+        </button>
+        <button class="example-button" type="button" data-example="给已登记的联系人小王转100元。">
+          <svg class="task-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h17m-5-5 5 5-5 5M21 17H4m5-5-5 5 5 5"/></svg>
+          <span><strong>智能转账</strong><small>转给已登记的联系人</small></span>
+          <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 4 4 4-4 4"/></svg>
+        </button>
+        <button class="example-button" type="button" data-example="查询模拟理财产品目录。">
+          <svg class="task-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M5 16V9m7 7V4m7 12v-5M3 7l8-4 9 4"/></svg>
+          <span><strong>理财操作</strong><small>固定产品对比与条件匹配</small></span>
+          <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 4 4 4-4 4"/></svg>
+        </button>
+        <button class="example-button" type="button" data-example="查看我的模拟卡。">
+          <svg class="task-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 9h20M6 15h5m5 0h2"/></svg>
+          <span><strong>卡片管理</strong><small>模拟申请与每日限额</small></span>
+          <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 4 4 4-4 4"/></svg>
+        </button>
+        <button class="example-button" type="button" data-example="查询模拟生活服务目录。">
+          <svg class="task-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16v11H4zM2 6h20v4H2zM12 6v15M12 6C6 6 5 3 7 2c2-1 4 1 5 4Zm0 0c6 0 7-3 5-4-2-1-4 1-5 4Z"/></svg>
+          <span><strong>生活任务</strong><small>预算保留、模拟下单与核对</small></span>
+          <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 4 4 4-4 4"/></svg>
+        </button>
+      </nav>
+      <div class="identity">
+        <p>演示用户 <span id="session-user">—</span></p>
+        <p class="muted">身份由本机配置确定</p>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="main-header">
+        <div>
+          <h1>和银行助手聊一聊</h1>
+          <p>说出需求，执行前由你确认。</p>
+        </div>
+        <div class="header-actions">
+        <button id="history-button" class="button button-secondary" type="button" disabled>历史任务与接管</button>
+        <button id="audit-button" class="button button-secondary audit-button" type="button" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h12M9 12h12M9 19h12M3 5h1m-1 7h1m-1 7h1"/></svg>
+          查看审计记录
+        </button>
+        </div>
+      </header>
+      <div class="simulation-banner">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 11v6m0-10v.1"/></svg>
+        <p>所有账户、资金和平台操作均为模拟，不连接真实银行。</p>
+      </div>
+      <div id="connection-notice" class="connection-notice" role="status" hidden>
+        <p id="connection-message"></p>
+        <button id="reconnect-button" class="button button-secondary" type="button" hidden>重新连接</button>
+      </div>
+
+      <div class="workspace">
+        <section class="conversation" aria-label="与银行助手对话">
+          <div id="conversation-scroll" class="conversation-scroll">
+            <div id="empty-state" class="empty-state">
+              <svg class="chat-symbol" viewBox="0 0 48 48" aria-hidden="true"><path d="M15 8h18a11 11 0 0 1 11 11v8a11 11 0 0 1-11 11H20L9 46V36a11 11 0 0 1-5-9v-8A11 11 0 0 1 15 8Z"/><path d="M17 21h14"/></svg>
+              <h2>今天想处理什么？</h2>
+              <p>从左侧选一个示例，或直接输入你的需求。</p>
+              <p class="empty-hint">六个方向均使用模拟数据。示例只填入，不会发送或执行。<br>生活任务先保留预算，再用明确预算ID、服务和日期办理；不会自动定时下单。</p>
+            </div>
+            <div id="messages" class="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+          </div>
+          <form id="message-form" class="composer-area">
+            <div class="composer">
+              <label class="sr-only" for="message-input">向银行助手描述需求</label>
+              <textarea id="message-input" name="message" rows="2" maxlength="1000" placeholder="例如：这个月已经花了多少？" disabled></textarea>
+              <button id="send-button" class="button button-primary send-button" type="submit" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 19 9-19 9 4-9-4-9Zm4 9h15"/></svg>
+                <span id="send-label">发送</span>
+              </button>
+            </div>
+            <div class="composer-footer">
+              <span>Enter 发送 · Shift + Enter 换行</span>
+              <span id="activity-status" role="status"></span>
+            </div>
+          </form>
+        </section>
+
+        <aside class="confirmation-rail" aria-label="操作确认和计划">
+          <div class="rail-heading">
+            <h2>操作确认</h2>
+            <p>需要你确认的操作会显示在这里。</p>
+          </div>
+          <div id="confirmation-empty" class="confirmation-empty">
+            <svg class="shield-symbol" viewBox="0 0 48 54" aria-hidden="true"><path d="m24 3 19 8v15c0 10-8 18-19 24C13 44 5 36 5 26V11l19-8Z"/><path d="m16 26 6 6 12-13"/></svg>
+            <h3>当前没有待确认操作</h3>
+            <p>目标、金额与影响将先展示，<br>只有点击确认后才会执行。</p>
+          </div>
+          <section id="confirmation-active" class="confirmation-active" aria-label="核对本次操作" hidden>
+            <div id="confirmation-details"></div>
+            <p id="confirmation-expiry" class="confirmation-expiry"></p>
+            <div class="confirmation-code-row">
+              <span>本次屏显确认码</span>
+              <strong id="confirmation-code"></strong>
+            </div>
+            <div class="confirmation-actions">
+              <button id="confirm-button" class="button button-primary" type="button" disabled>确认这次操作</button>
+              <button id="cancel-button" class="button button-secondary" type="button" disabled>取消</button>
+            </div>
+          </section>
+          <section id="plan-panel" class="plan-panel" aria-label="当前任务计划" hidden>
+            <h3>任务计划</h3>
+            <p id="plan-status" class="muted"></p>
+            <ol id="plan-steps" class="plan-steps"></ol>
+            <p id="plan-policy" class="plan-policy"></p>
+            <div class="plan-actions">
+              <button id="resume-button" class="button button-secondary" type="button" hidden>继续计划</button>
+              <button id="interrupt-button" class="button button-secondary" type="button" hidden>中断</button>
+              <button id="takeover-button" class="button button-secondary" type="button" hidden>人工接管</button>
+            </div>
+          </section>
+          <div class="execution-boundary">
+            <h3>执行边界</h3>
+            <ul>
+              <li>权限由代码判定</li>
+              <li>查询和执行都会记录审计</li>
+              <li>高风险操作条件不足时拒绝</li>
+            </ul>
+            <p>屏显确认码仅用于本次确认，不代表多因素认证。</p>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="history-dialog" class="audit-dialog" aria-labelledby="history-title">
+    <div class="dialog-heading">
+      <div><h2 id="history-title">历史任务与接管</h2><p>查看实际保存的结果；重新办理须重新核对并确认。</p></div>
+      <button id="close-history-button" class="button button-secondary" type="button">关闭</button>
+    </div>
+    <div class="audit-content history-content">
+      <div class="history-actions">
+        <button id="refresh-history-button" class="button button-secondary" type="button">刷新任务与接管事项</button>
+        <button id="cancel-session-work-button" class="button button-secondary" type="button">取消本会话待办</button>
+      </div>
+      <p id="history-message" role="status"></p>
+      <section id="recovery-review" class="history-card" aria-label="恢复前核对" hidden></section>
+      <section aria-labelledby="saved-plans-title"><h3 id="saved-plans-title">已保存任务</h3><div id="history-plans"></div></section>
+      <section aria-labelledby="handovers-title"><h3 id="handovers-title">本地接管事项</h3><p class="muted">处置记录只登记事实，不退款、不反向转账，也不恢复订阅。</p><div id="history-handovers"></div></section>
+    </div>
+  </dialog>
+
+  <dialog id="audit-dialog" class="audit-dialog" aria-labelledby="audit-title">
+    <div class="dialog-heading">
+      <div><h2 id="audit-title">审计记录</h2><p>当前用户的实际脱敏回执，只能查看。</p></div>
+      <button id="close-audit-button" class="button button-secondary" type="button">关闭</button>
+    </div>
+    <div id="audit-content" class="audit-content"></div>
+  </dialog>
+</body>
+</html>
