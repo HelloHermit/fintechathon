@@ -65,8 +65,7 @@ export function yuanShort(cents) {
 
 export function pct(x, digits = 1) {
   if (x === null || x === undefined) return "—";
-  const v = Math.abs(x) <= 1.5 && !Number.isInteger(x) ? x * 100 : x; // 兼容 0.23 与 23
-  return `${v.toFixed(digits)}%`;
+  return `${Number(x).toFixed(digits)}%`; // 入参是百分数（如 change_pct=23.5 表示 23.5%）
 }
 
 // ---- 时间：后端统一给 +08:00 的 ISO 字符串，直接截取，避免受浏览器时区影响 ----

@@ -64,6 +64,7 @@ export function beijing(ms) {
 export function trackPending(op, turnId) {
   if (!op || !op.request_id) return null;
   const existing = state.pendings.get(op.request_id);
+  if (existing && !op.confirmation_code && existing.op.confirmation_code) op = { ...op, confirmation_code: existing.op.confirmation_code };
   const entry = existing ? { ...existing, op } : { op, status: "open", turnId };
   state.pendings.set(op.request_id, entry);
   emit("pendings");

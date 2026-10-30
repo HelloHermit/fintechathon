@@ -110,7 +110,9 @@ export function auditPage(c) {
   loadInto(c, async () => {
     const r = await api.audit(100);
     const chain = r.chain || {};
-    const RES = { success: "ok", rejected: "danger", failed: "danger", pending: "info", cancelled: "" };
+    const RES = { success: "ok", rejected: "danger", failed: "danger", pending: "info", cancelled: "", corrected: "warn", blocked: "danger" };
+    const RES_TEXT = { success: "成功", rejected: "已拒绝", failed: "失败", pending: "待确认", cancelled: "已取消", corrected: "已纠正", blocked: "已拦截", expired: "已过期" };
+    const EVENT_TEXT = { executed: "已执行", pending_created: "生成待确认单", otp_sent: "发送动态码", fact_check: "事实校验", confirmed: "已确认", cancelled: "已取消", rejected: "拒绝", guard_blocked: "输入拦截", auth_failed: "验证失败", locked: "锁定", scheduled_executed: "定时执行", demo_reset: "重置演示库", expired: "过期" };
     c.replaceChildren(
       h(`div.chain-box.${chain.verified ? "ok" : "danger"}`, null, icon(chain.verified ? "check" : "alert"),
         h("div", null, h("b", { text: chain.verified ? "哈希链校验通过" : "哈希链校验失败" }),
@@ -118,10 +120,10 @@ export function auditPage(c) {
       h("div.muted.small.pad", { text: "审计只追加，和业务修改在同一事务里写入；每条记录带上一条的哈希，任何改动都会让校验失败。" }),
       h("div.card-plain", null, (r.events || []).map((e) => h("div.audit-row", null,
         h("div.audit-main", null,
-          h("div", null, h(`span.tier-tag.${e.tier || "green"}`, { text: { green: "绿", yellow: "黄", red: "红" }[e.tier] || e.tier || "—" }), " ", h("b", { text: e.intent || e.event }), " ", h("span.muted.small", { text: e.event || "" })),
+          h("div", null, ["green", "yellow", "red"].includes(e.tier) ? h(`span.tier-tag.${e.tier}`, { text: { green: "绿", yellow: "黄", red: "红" }[e.tier] }) : null, " ", h("b", { text: e.intent || e.event }), " ", h("span.muted.small", { text: EVENT_TEXT[e.event] || e.event || "" })),
           h("div.muted.small", { text: `${fmtTime(e.time)} · ${{ user: "本人", agent: "智能体", scheduler: "调度器" }[e.actor] || e.actor || ""}${e.reason ? " · " + e.reason : ""}` }),
           h("div.hash", { text: String(e.hash || "").slice(0, 24) })),
-        h(`span.chip.${RES[e.result] ?? ""}`, { text: e.result || "" }),
+        h(`span.chip.${RES[e.result] ?? ""}`, { text: RES_TEXT[e.result] || e.result || "" }),
         e.turn_id ? h("button.link", { type: "button", onclick: () => pushPage("决策链回放", (cc) => turnReplay(cc, e.turn_id)) }, "回放") : null))));
   });
 }

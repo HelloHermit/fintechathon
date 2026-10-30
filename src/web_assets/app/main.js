@@ -1,7 +1,7 @@
 // 入口：取会话 → 建标签页 → 右侧面板（演示控制 / 安全透视 / 模拟手机）→ 轮询短信。
 import { h, icon } from "./util.js";
 import { api, setCsrf, MOCK, params } from "./api.js";
-import { state, on, simNowMs, beijing } from "./store.js";
+import { state, on, emit, simNowMs, beijing, trackPending } from "./store.js";
 import { buildTabbar, registerPage, goTab } from "./nav.js";
 import { homePage } from "./home.js";
 import { chatPage } from "./chat.js";
@@ -38,11 +38,21 @@ async function boot() {
   const startTab = params.get("tab");
   goTab(["home", "chat", "bills", "cards", "me"].includes(startTab) ? startTab : "home");
 
+  await restorePendings();
   buildSide();
   startSmsPolling();
   tickClock();
   setInterval(tickClock, 1000);
   on("clock", tickClock);
+}
+
+// 刷新页面后恢复还没处理的待确认单（API_V2 5.1：这里不带确认码，黄档单需要重新发起）
+async function restorePendings() {
+  try {
+    const r = await api.pendingList();
+    (r.items || []).forEach((op) => trackPending(op, null));
+    if ((r.items || []).length) emit("pendings");
+  } catch { /* 旧后端没有这个接口时忽略 */ }
 }
 
 function tickClock() {

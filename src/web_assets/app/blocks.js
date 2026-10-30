@@ -132,7 +132,7 @@ function anomaly_list(d) {
 
 function report(d) {
   const kindText = d.kind === "annual" ? "年度报告" : "月度账单报告";
-  const periodText = typeof d.period === "string" ? d.period : d.period ? `${d.period.from || ""} 至 ${d.period.to || ""}` : "";
+  const periodText = typeof d.period === "string" ? d.period : d.period ? `${fmtTime(d.period.from, "ymd")} 至 ${fmtTime(d.period.to, "ymd")}` : "";
   return h("div.card-plain.report", null,
     h("div.report-head", null, h("div", null, h("div.report-kind", { text: kindText }), h("div.report-period", { text: periodText })), icon("chart")),
     h("div.kpis", null, (d.kpis || []).map((k) => h("div.kpi", null,

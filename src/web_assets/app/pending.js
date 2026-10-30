@@ -87,7 +87,10 @@ class PendingView {
     this.expiryEl = h("div.ps-expiry.muted.small");
     this.cooldownEl = h("div.ps-cooldown");
     this.mainBtn = h("button.btn.primary.block.lg", { type: "button", onclick: () => this.primary() }, op.tier === "red" ? "下一步：强验证" : "确认办理");
-    children.push(this.cooldownEl,
+    this.confirmErr = h("div.sa-error", { role: "alert" });
+    this.noCode = op.tier !== "red" && op.kind !== "strong_auth" && !op.confirmation_code;
+    if (this.noCode) this.confirmErr.textContent = "页面刷新后，这张单的确认码已失效（确认码只发一次）。请取消后重新发起。";
+    children.push(this.cooldownEl, this.confirmErr,
       h("div.ps-actions", null,
         h("button.btn.ghost", { type: "button", onclick: () => this.cancel() }, "取消"),
         this.mainBtn),
@@ -147,6 +150,7 @@ class PendingView {
       }
     }
     if (op.risk?.require_ack && !this.ack) blocked = true;
+    if (this.noCode) blocked = true;
     if (this.mainBtn) this.mainBtn.disabled = blocked || state.busy;
   }
 
@@ -156,7 +160,12 @@ class PendingView {
     const op = this.op;
     const resp = await runTurn(() => api.confirm(op.request_id, op.confirmation_code, op.risk?.require_ack ? this.ack : undefined),
       { label: "点击确认", kind: "confirm", forRequest: op.request_id });
-    if (resp) closeSheet();
+    if (resp && state.pendings.get(op.request_id)?.status === "open") {
+      // 后端带回了原单（例如没勾选风险、冷静期没到）：留在面板上
+      if (resp.pending) this.op = { ...this.op, ...resp.pending, confirmation_code: resp.pending.confirmation_code || this.op.confirmation_code };
+      this.confirmErr.textContent = resp.error?.message || resp.assistant?.text || "没有办成，请检查后重试。";
+      this.updateClocks();
+    } else if (resp) closeSheet();
     else this.updateClocks();
   }
 
@@ -258,8 +267,17 @@ class PendingView {
       this.field = this.pin.length === 6 ? "otp" : "pin";
       this.paintFields();
     } catch (e) {
-      this.sendBtn.disabled = false;
+      const wait = e.data?.resend_after_seconds;
       this.errorEl.textContent = e.message;
+      if (wait) {
+        let left = wait;
+        const step = () => {
+          if (!this.sendBtn.isConnected) return;
+          if (left <= 0) { this.sendBtn.disabled = false; this.sendBtn.textContent = "重新发送"; return; }
+          this.sendBtn.textContent = `${left} 秒后可重发`; left -= 1; this.timers.push(setTimeout(step, 1000));
+        };
+        step();
+      } else this.sendBtn.disabled = false;
     }
   }
   async verify() {

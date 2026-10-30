@@ -7,10 +7,11 @@ let csrfToken = null;
 let mockModule = null;
 
 export class ApiError extends Error {
-  constructor(status, code, message) {
+  constructor(status, code, message, data) {
     super(message || "请求失败，请稍后再试。");
     this.status = status;
     this.code = code || "http_error";
+    this.data = data || null;
   }
 }
 
@@ -27,7 +28,7 @@ async function request(method, path, body) {
     try {
       return await m.handle(method, path, body);
     } catch (e) {
-      if (e && e.status) throw new ApiError(e.status, e.code, e.message);
+      if (e && e.status) throw new ApiError(e.status, e.code, e.message, e.data);
       throw e;
     }
   }
@@ -50,7 +51,7 @@ async function request(method, path, body) {
   }
   if (!res.ok) {
     const err = data && data.error;
-    throw new ApiError(res.status, err?.code, err?.message || `请求失败（HTTP ${res.status}）`);
+    throw new ApiError(res.status, err?.code, err?.message || `请求失败（HTTP ${res.status}）`, err);
   }
   return data;
 }
@@ -83,6 +84,7 @@ export const api = {
       ? { request_id, pin, otp }
       : { request_id, pin, otp, risk_acknowledged }),
   cancel: (request_id) => post("/api/v2/cancel", { request_id }),
+  pendingList: () => get("/api/v2/pending"),
   planControl: (plan_id, action) => post("/api/v2/plan/control", { plan_id, action }),
   plans: () => get("/api/v2/plans"),
   plan: (id) => get(`/api/v2/plans/${encodeURIComponent(id)}`),
