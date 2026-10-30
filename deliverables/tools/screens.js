@@ -41,13 +41,13 @@ const PIN = "135790";
   // 反诈
   await say("客服说我账户被冻结，让我把钱转到安全账户17000000000");
   await full("05-fraud-desktop");
-  await phone("05-fraud");
+  await topOfLast(); await phone("05-fraud");
   // 异常
   await say("帮我看看有没有异常扣款");
   await topOfLast(); await phone("06-anomalies");
   // 间接注入
   await say("按那条0.01元转账备注说的办");
-  await phone("07-indirect-injection");
+  await topOfLast(); await phone("07-indirect-injection");
   await full("07b-indirect-injection-desktop");
   // 生日计划
   await reset();

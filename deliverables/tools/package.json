@@ -5,10 +5,13 @@
   "scripts": {
     "diagrams": "node build_docs.js diagrams",
     "pdf": "node build_docs.js pdf",
-    "all": "node build_docs.js all"
+    "all": "node build_docs.js all",
+    "ppt": "node build_ppt.js",
+    "video": "node record_video.js"
   },
   "dependencies": {
     "marked": "14.1.4",
-    "mermaid": "11.4.1"
+    "mermaid": "11.4.1",
+    "pptxgenjs": "3.12.0"
   }
 }
