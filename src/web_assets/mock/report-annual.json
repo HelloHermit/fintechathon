@@ -1,0 +1,165 @@
+{
+ "kind": "annual",
+ "period": "2025-11 至 2026-10（过去 12 个月）",
+ "kpis": [
+  {
+   "label": "总支出",
+   "value": "¥140,696.00",
+   "delta": null
+  },
+  {
+   "label": "总收入",
+   "value": "¥180,000.13",
+   "delta": null
+  },
+  {
+   "label": "月均支出",
+   "value": "¥11,724.67",
+   "delta": null
+  },
+  {
+   "label": "储蓄率",
+   "value": "21.9%",
+   "delta": null
+  }
+ ],
+ "sections": [
+  {
+   "title": "要点",
+   "bullets": [
+    "支出最高的月份：2025-11（双十一购物）",
+    "2026-07 旅行支出约 ¥4,000",
+    "住房缴费占比最大，每月房租 ¥4,500"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "type": "trend_chart",
+   "data": {
+    "title": "近 12 个月支出",
+    "metric": "expense",
+    "series": [
+     {
+      "label": "2025-11",
+      "value_cents": 1462000
+     },
+     {
+      "label": "2025-12",
+      "value_cents": 1080000
+     },
+     {
+      "label": "2026-01",
+      "value_cents": 1050000
+     },
+     {
+      "label": "2026-02",
+      "value_cents": 1310000
+     },
+     {
+      "label": "2026-03",
+      "value_cents": 990000
+     },
+     {
+      "label": "2026-04",
+      "value_cents": 1020000
+     },
+     {
+      "label": "2026-05",
+      "value_cents": 1060000
+     },
+     {
+      "label": "2026-06",
+      "value_cents": 1015000
+     },
+     {
+      "label": "2026-07",
+      "value_cents": 1430000
+     },
+     {
+      "label": "2026-08",
+      "value_cents": 1040000
+     },
+     {
+      "label": "2026-09",
+      "value_cents": 1129600
+     },
+     {
+      "label": "2026-10",
+      "value_cents": 1483000
+     }
+    ]
+   }
+  },
+  {
+   "type": "spending_breakdown",
+   "data": {
+    "period": {
+     "from": "2025-11-01T00:00:00+08:00",
+     "to": "2026-10-30T09:00:00+08:00"
+    },
+    "total_cents": 1483000,
+    "categories": [
+     {
+      "name": "住房缴费",
+      "amount_cents": 472000,
+      "share": 0.3183,
+      "count": 2
+     },
+     {
+      "name": "购物",
+      "amount_cents": 638000,
+      "share": 0.4302,
+      "count": 5
+     },
+     {
+      "name": "餐饮外卖",
+      "amount_cents": 118600,
+      "share": 0.08,
+      "count": 22
+     },
+     {
+      "name": "转账给他人",
+      "amount_cents": 100000,
+      "share": 0.0674,
+      "count": 1
+     },
+     {
+      "name": "超市日用",
+      "amount_cents": 82300,
+      "share": 0.0555,
+      "count": 8
+     },
+     {
+      "name": "交通出行",
+      "amount_cents": 41200,
+      "share": 0.0278,
+      "count": 26
+     },
+     {
+      "name": "订阅会员",
+      "amount_cents": 13700,
+      "share": 0.0092,
+      "count": 5
+     },
+     {
+      "name": "娱乐",
+      "amount_cents": 16800,
+      "share": 0.0113,
+      "count": 2
+     },
+     {
+      "name": "其他",
+      "amount_cents": 400,
+      "share": 0.0003,
+      "count": 3
+     }
+    ],
+    "compare": {
+     "prev_total_cents": 1129600,
+     "change_pct": 31.3
+    }
+   }
+  }
+ ]
+}

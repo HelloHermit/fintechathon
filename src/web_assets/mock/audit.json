@@ -1,0 +1,48 @@
+{
+ "events": [
+  {
+   "id": "ev-3",
+   "time": "2026-10-30T08:59:00+08:00",
+   "turn_id": null,
+   "request_id": null,
+   "intent": "seed",
+   "tier": "green",
+   "event": "demo_reset",
+   "result": "success",
+   "reason": "按 rich 种子重建",
+   "actor": "scheduler",
+   "hash": "9f2c71d0a4b84d1e5c0b2f7a3e6d1c09b8a7f6e5d4c3b2a1908f7e6d5c4b3a29"
+  },
+  {
+   "id": "ev-2",
+   "time": "2026-10-01T09:00:00+08:00",
+   "turn_id": null,
+   "request_id": "sch-rent",
+   "intent": "transfer",
+   "tier": "red",
+   "event": "scheduled_executed",
+   "result": "success",
+   "reason": "定时转账（已授权）",
+   "actor": "scheduler",
+   "hash": "41d0c9b8a7f6e5d4c3b2a1908f7e6d5c4b3a29f2c71d0a4b84d1e5c0b2f7a3e6"
+  },
+  {
+   "id": "ev-1",
+   "time": "2026-09-30T20:00:00+08:00",
+   "turn_id": null,
+   "request_id": null,
+   "intent": "query_balance",
+   "tier": "green",
+   "event": "executed",
+   "result": "success",
+   "reason": "",
+   "actor": "agent",
+   "hash": "0b2f7a3e6d1c09b8a7f6e5d4c3b2a1908f7e6d5c4b3a29f2c71d0a4b84d1e5c"
+  }
+ ],
+ "chain": {
+  "verified": true,
+  "length": 3,
+  "head_hash": "9f2c71d0a4b84d1e5c0b2f7a3e6d1c09b8a7f6e5d4c3b2a1908f7e6d5c4b3a29"
+ }
+}

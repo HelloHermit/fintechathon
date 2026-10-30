@@ -1,0 +1,24 @@
+{
+ "cards": [
+  {
+   "card_id": "card-6621",
+   "name": "储蓄卡",
+   "kind": "debit",
+   "masked_no": "**** 6621",
+   "account_id": "alice-main",
+   "status": "active",
+   "daily_limit_cents": 500000,
+   "today_spent_cents": 0
+  },
+  {
+   "card_id": "card-3301",
+   "name": "网购虚拟卡",
+   "kind": "virtual",
+   "masked_no": "**** 3301",
+   "account_id": "alice-main",
+   "status": "active",
+   "daily_limit_cents": 100000,
+   "today_spent_cents": 0
+  }
+ ]
+}

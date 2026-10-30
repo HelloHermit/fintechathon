@@ -1,0 +1,13 @@
+{
+ "holdings": [
+  {
+   "product_id": "prd-steady",
+   "name": "稳健季享",
+   "amount_cents": 2000000,
+   "profit_cents": 11800,
+   "purchased_at": "2026-08-01T09:00:00+08:00",
+   "redeemable_cents": 2000000
+  }
+ ],
+ "risk_profile": null
+}

@@ -1,0 +1,13 @@
+{
+ "items": [
+  {
+   "schedule_id": "sch-rent",
+   "kind": "transfer",
+   "title": "转账给李建国（房租）",
+   "amount_cents": 450000,
+   "run_at": "2026-11-01T09:00:00+08:00",
+   "repeat": "monthly",
+   "status": "scheduled"
+  }
+ ]
+}

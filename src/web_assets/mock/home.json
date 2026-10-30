@@ -1,0 +1,104 @@
+{
+ "now": "2026-10-30T09:00:00+08:00",
+ "total_assets_cents": 9669800,
+ "accounts": [
+  {
+   "account_id": "alice-main",
+   "name": "储蓄卡（活期）",
+   "masked_no": "尾号6621",
+   "balance_cents": 2658000,
+   "reserved_cents": 0,
+   "available_cents": 2658000
+  },
+  {
+   "account_id": "alice-savings",
+   "name": "储蓄账户",
+   "masked_no": "尾号8803",
+   "balance_cents": 5000000,
+   "reserved_cents": 0,
+   "available_cents": 5000000
+  }
+ ],
+ "insights": [
+  {
+   "insight_id": "ins-birthday",
+   "kind": "birthday",
+   "title": "周屿（爱人）11-12 生日，还有 13 天",
+   "body": "帮你准备：锁定 ¥1,000 生日预算，11-10 订鲜花和蛋糕。",
+   "cta_label": "帮我准备"
+  },
+  {
+   "insight_id": "ins-anomaly",
+   "kind": "anomaly",
+   "title": "近期有 4 处可疑交易",
+   "body": "凌晨境外消费、疑似重复扣款、小额试探、可疑来账",
+   "cta_label": "去查看"
+  },
+  {
+   "insight_id": "ins-renewal",
+   "kind": "renewal",
+   "title": "2 项订阅将在 7 天内续费",
+   "body": "查看具体名单需要你确认（黄档）",
+   "cta_label": "看看是哪些"
+  },
+  {
+   "insight_id": "ins-rent",
+   "kind": "rent",
+   "title": "11-01 将自动转出房租 ¥4,500.00",
+   "body": "给李建国，备注“房租”。执行前会再次检查余额。",
+   "cta_label": null
+  }
+ ],
+ "quick_actions": [
+  {
+   "label": "转账",
+   "prompt": "我要转账"
+  },
+  {
+   "label": "本月账单",
+   "prompt": "这个月花了多少钱？"
+  },
+  {
+   "label": "异常检查",
+   "prompt": "帮我看看有没有异常扣款"
+  },
+  {
+   "label": "理财",
+   "prompt": "推荐点稳一点的，放半年"
+  },
+  {
+   "label": "自动扣费",
+   "prompt": "我有哪些自动扣费"
+  },
+  {
+   "label": "我的卡",
+   "prompt": "我有哪些卡"
+  },
+  {
+   "label": "生日计划",
+   "prompt": "我老婆下个月12号生日，帮我准备一下"
+  },
+  {
+   "label": "转人工",
+   "prompt": "转人工"
+  }
+ ],
+ "notifications": [
+  {
+   "id": "n1",
+   "time": "2026-10-27T14:06:00+08:00",
+   "kind": "risk_alert",
+   "title": "收到一笔可疑来账 ¥0.01",
+   "body": "对方“客服中心”，备注含可疑指令，已按数据处理",
+   "read": false
+  },
+  {
+   "id": "n2",
+   "time": "2026-10-10T08:00:00+08:00",
+   "kind": "scheduled_executed",
+   "title": "工资到账 ¥15,000.00",
+   "body": "工资·星河科技",
+   "read": true
+  }
+ ]
+}

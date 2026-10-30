@@ -1,0 +1,148 @@
+{
+ "kind": "monthly",
+ "period": "2026-10（截至 10-30 09:00）",
+ "kpis": [
+  {
+   "label": "本月支出",
+   "value": "¥14,830.00",
+   "delta": "环比 +31.3%"
+  },
+  {
+   "label": "本月收入",
+   "value": "¥15,000.01",
+   "delta": "工资 1 笔"
+  },
+  {
+   "label": "异常发现",
+   "value": "4 处",
+   "delta": "高 2 · 中 2"
+  },
+  {
+   "label": "订阅支出",
+   "value": "¥137.00",
+   "delta": "5 项"
+  }
+ ],
+ "sections": [
+  {
+   "title": "要点",
+   "bullets": [
+    "最大支出是 10-21 凌晨的境外消费 ¥3,280.00，已标为高风险",
+    "购物比上月多，主要是 10-09 数码商城 ¥2,699.00（正常网购）",
+    "外卖 22 笔，平均每笔约 ¥53.91"
+   ]
+  },
+  {
+   "title": "建议",
+   "bullets": [
+    "核实凌晨境外消费；如不是本人，可一键冻结储蓄卡",
+    "健身App会员 90 天未使用，可以考虑取消"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "type": "spending_breakdown",
+   "data": {
+    "period": {
+     "from": "2026-10-01T00:00:00+08:00",
+     "to": "2026-10-30T09:00:00+08:00"
+    },
+    "total_cents": 1483000,
+    "categories": [
+     {
+      "name": "住房缴费",
+      "amount_cents": 472000,
+      "share": 0.3183,
+      "count": 2
+     },
+     {
+      "name": "购物",
+      "amount_cents": 638000,
+      "share": 0.4302,
+      "count": 5
+     },
+     {
+      "name": "餐饮外卖",
+      "amount_cents": 118600,
+      "share": 0.08,
+      "count": 22
+     },
+     {
+      "name": "转账给他人",
+      "amount_cents": 100000,
+      "share": 0.0674,
+      "count": 1
+     },
+     {
+      "name": "超市日用",
+      "amount_cents": 82300,
+      "share": 0.0555,
+      "count": 8
+     },
+     {
+      "name": "交通出行",
+      "amount_cents": 41200,
+      "share": 0.0278,
+      "count": 26
+     },
+     {
+      "name": "订阅会员",
+      "amount_cents": 13700,
+      "share": 0.0092,
+      "count": 5
+     },
+     {
+      "name": "娱乐",
+      "amount_cents": 16800,
+      "share": 0.0113,
+      "count": 2
+     },
+     {
+      "name": "其他",
+      "amount_cents": 400,
+      "share": 0.0003,
+      "count": 3
+     }
+    ],
+    "compare": {
+     "prev_total_cents": 1129600,
+     "change_pct": 31.3
+    }
+   }
+  },
+  {
+   "type": "trend_chart",
+   "data": {
+    "title": "近 6 个月支出",
+    "metric": "expense",
+    "series": [
+     {
+      "label": "2026-05",
+      "value_cents": 1060000
+     },
+     {
+      "label": "2026-06",
+      "value_cents": 1015000
+     },
+     {
+      "label": "2026-07",
+      "value_cents": 1430000
+     },
+     {
+      "label": "2026-08",
+      "value_cents": 1040000
+     },
+     {
+      "label": "2026-09",
+      "value_cents": 1129600
+     },
+     {
+      "label": "2026-10",
+      "value_cents": 1483000
+     }
+    ]
+   }
+  }
+ ]
+}

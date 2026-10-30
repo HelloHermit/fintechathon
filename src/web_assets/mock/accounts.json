@@ -1,0 +1,20 @@
+{
+ "accounts": [
+  {
+   "account_id": "alice-main",
+   "name": "储蓄卡（活期）",
+   "masked_no": "尾号6621",
+   "balance_cents": 2658000,
+   "reserved_cents": 0,
+   "available_cents": 2658000
+  },
+  {
+   "account_id": "alice-savings",
+   "name": "储蓄账户",
+   "masked_no": "尾号8803",
+   "balance_cents": 5000000,
+   "reserved_cents": 0,
+   "available_cents": 5000000
+  }
+ ]
+}

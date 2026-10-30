@@ -1,0 +1,28 @@
+{
+ "user": {
+  "user_id": "alice",
+  "display_name": "陈雨桐",
+  "masked_phone": "138****0001"
+ },
+ "csrf_token": "mock-csrf",
+ "model": {
+  "configured": true,
+  "name": "deepseek-flash",
+  "mode": "replay"
+ },
+ "demo": {
+  "enabled": true,
+  "now": "2026-10-30T09:00:00+08:00",
+  "users": [
+   {
+    "user_id": "alice",
+    "display_name": "陈雨桐"
+   },
+   {
+    "user_id": "bob",
+    "display_name": "王磊"
+   }
+  ]
+ },
+ "version": "2.0-mock"
+}
