@@ -1,9 +1,0 @@
-test_16_six_bank_tools_use_actual_executor_and_keep_business_facts (task2_docker_independent_cases.DockerIndependentAcceptance.test_16_six_bank_tools_use_actual_executor_and_keep_business_facts) ... ok
-test_17_red_tier_remains_refused_after_synthetic_two_factors (task2_docker_independent_cases.DockerIndependentAcceptance.test_17_red_tier_remains_refused_after_synthetic_two_factors) ... ok
-test_18_bank_isolation_failure_keeps_mutations_and_dependencies_stopped (task2_docker_independent_cases.DockerIndependentAcceptance.test_18_bank_isolation_failure_keeps_mutations_and_dependencies_stopped) ... ok
-test_19_business_audit_failure_rolls_back_real_isolated_transfer (task2_docker_independent_cases.DockerIndependentAcceptance.test_19_business_audit_failure_rolls_back_real_isolated_transfer) ... ok
-
-----------------------------------------------------------------------
-Ran 4 tests in 41.367s
-
-OK
