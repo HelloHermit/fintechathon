@@ -1,5 +1,22 @@
 # 独立验收测试
 
+**2026-10-25任务续接**：task1 Docker独立33项、task2独立37项及各阶段159项通过，见[29](../docs/29-task1-isolation-delivery.md)、[32](../docs/32-recovery-delivery.md)。task3独立45项、恢复37项、原159项及复用Docker接入4项通过；真实18组首轮15过/3失败保留，只修提示后全18通过，源码版本差异和原始证据见[35](../docs/35-context-delivery.md)，原作者审核见[34](../docs/34-context-independent-acceptance.md)。离线、实际浏览器、真实模型、真人核验分别记录。专项缺环境记失败，不能skip当通过。Windows原31项失败、后续41项未运行；下文为历史。不要把未配runtime的全目录discover当全部实测命令。
+
+当前各套件分别运行，保存新证据且不覆盖历史：
+
+```powershell
+python scripts/isolation_check.py
+python scripts/stage_check.py --stage recovery
+python scripts/stage_check.py --stage context
+python scripts/docker_isolation_check.py --runtime .isolation/docker-runtime-20261023
+```
+
+前三条不调用真实模型；Docker专项要求显式本机受测runtime和可用Linux引擎。所有套件使用新模拟库，只对正常账本及旧包做文件指纹核对。当前工作树的新增能力须以其自身版本复测，不能直接继承task1/2的旧通过结论。
+
+task3真实18组另行显式运行（使用现有配置与额度，最多40次，无自动重试）：`python tests/run_context_live_acceptance.py --run-live --max-api-calls 40`。不带显式开关或`--help`不读取配置；确认只限预定模拟目标、金额与代码回执严格匹配者，真实失败及用量单独保存。
+
+**20:00后修复复验**：新增`test_closeout_independent.py`由未读实现的独立作者按规则/公开接口编写，18项首轮9失败、修后全部通过；原141项未删除或降低。本轮统一159项通过，131.811秒、exit0、0失败/错误/跳过，见[本轮回归](../evidence/closeout-regression-20261011-201754-935091.json)及[独立收尾报告](../docs/24-closeout-independent-acceptance.md)。下文141项是15:42历史记录。可运行`python scripts/closeout_check.py`自动保存带时间/版本的原始日志；`python scripts/closeout_check.py --archive <新包路径>`另核对包内逐文件指纹、解包回归和公开启动脚本两次重启。全部使用独立模拟库，没有真实模型调用，不证明真人手机/终端或隔离。
+
 更新：2026-10-11。`test_acceptance.py`和`test_web_acceptance.py`由与实现隔离的验收子代理编写。业务作者首次设计只读`AGENTS.md`、`docs/01-permission-tiers.md`、`docs/02-user-stories.md`、`docs/05-audit-log-spec.md`、`spec/test-plan.md`和`src/PUBLIC_API.md`；HTTP作者另读公开`src/WEB_API.md`。作者未读取业务、模型或Web实现确定期望。验收通过公开`BankService`及HTTP接口执行，SQLite只访问公开表以核对事实、设置前置条件。
 
 当前统一复跑：**141项通过，0失败/错误/跳过，87.947秒、退出码0**，记录为[evidence/combined-regression-20261011-154218-477873.txt](../evidence/combined-regression-20261011-154218-477873.txt)及[版本快照](../evidence/combined-regression-20261011-154218-477873.json)，源码和测试运行前后哈希一致。组成是原66业务＋27本机HTTP的93项、V1独立4项、V2独立1项（内部10轮）、MFA独立43项（其独立专项99子用例通过）。新增作者也只读规格/公开接口、未读实现确定期望，报告分别为docs/16、20、23；实现方负责这次全套运行。原93项历史报告与失败保留，不代表真人MFA、正式隔离或完整人工验收。

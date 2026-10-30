@@ -1,0 +1,27 @@
+{
+  "observed_at_utc": "2026-10-29T00:15:15.684180+00:00",
+  "passed": true,
+  "source_sha256": "05f3035fed4463db211b6d2a9361fcae2d3af09d2b84854e5a1efb5381044f77",
+  "seal": "evidence\\six-delivery-20261028-173731-444281.json",
+  "url": "http://127.0.0.1:8765/",
+  "process_id": 63272,
+  "responses": {
+    "/": 200,
+    "/api/session": 200
+  },
+  "session": {
+    "user_id": "alice",
+    "model_configured": true,
+    "simulated": true
+  },
+  "actual_model_calls_made_by_startup_check": 0,
+  "business_posts_made_by_startup_check": 0,
+  "isolated_tools": true,
+  "runtime": ".isolation/docker-runtime-six-live-20261028",
+  "database": "data/bank.db",
+  "database_sha256_before": "aa7c627bb3b699bc5f88c3e86ea0c61fc65b08861e6c4374c01e58faddc46d74",
+  "database_sha256_after": null,
+  "database_backup": "tests\\.runs\\normal-ledger-before-six-web-20261029-001344-315347.sqlite",
+  "backup_sha256": "836a5aa0180a6655e7422c52fd28e32a2b731c593b2465a67c1fba8131c03c87",
+  "note": "Existing normal ledger was backed up and not reset. Startup follows the completed seal; schema/fixed simulated initialization and audit writes may change it. The initial PowerShell health helper could not hash the open database file, and the independent GET check here succeeded with closed connections. No unchanged-after-start database claim, business POST, or model request is made."
+}

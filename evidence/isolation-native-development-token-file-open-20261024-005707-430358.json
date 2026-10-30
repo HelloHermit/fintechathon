@@ -1,0 +1,138 @@
+{
+  "scope": "implementation_side_suspended_token_file_open_not_acceptance",
+  "file_contents_read": false,
+  "worker_resumed": false,
+  "host_thread_reverted": true,
+  "lpac_verified_before_file_probe": true,
+  "file_open_outcomes": {
+    "runtime_python_exe": {
+      "open_ok": true,
+      "error": 0
+    },
+    "runtime_python_dll": {
+      "open_ok": true,
+      "error": 0
+    },
+    "runtime_python_zip": {
+      "open_ok": true,
+      "error": 0
+    },
+    "runtime_worker": {
+      "open_ok": true,
+      "error": 0
+    },
+    "system_kernelbase": {
+      "open_ok": true,
+      "error": 0
+    },
+    "system_kernel32": {
+      "open_ok": true,
+      "error": 0
+    },
+    "system_ntdll": {
+      "open_ok": true,
+      "error": 0
+    },
+    "runtime_directory": {
+      "traverse_attributes_open_ok": true,
+      "error": 0
+    },
+    "runtime_parent": {
+      "traverse_attributes_open_ok": false,
+      "error": 5
+    },
+    "project_directory": {
+      "traverse_attributes_open_ok": false,
+      "error": 5
+    },
+    "drive_root": {
+      "traverse_attributes_open_ok": false,
+      "error": 5
+    }
+  },
+  "backend": {
+    "status": "failed",
+    "reason": "isolation_unavailable",
+    "exit_code": 1816,
+    "metadata": {
+      "pid": 42656,
+      "is_appcontainer": true,
+      "is_lpac": null,
+      "capability_count": null,
+      "integrity": null,
+      "job_limit_flags": null,
+      "child_restricted": null,
+      "start": "2026-10-24T00:57:07.385+08:00",
+      "end": "2026-10-24T00:57:07.428+08:00",
+      "wall_ms": 47.0,
+      "cpu_ms": 0.0,
+      "peak_job_memory_bytes": 389120,
+      "active_processes_after": 0,
+      "termination": "job_terminated",
+      "loopback_exempt": false,
+      "job_events": [],
+      "startup_stage": "verifying_lpac_token",
+      "cleanup_complete": true,
+      "environment_keys": [
+        "APPDATA",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "LOCALAPPDATA",
+        "PUBLIC",
+        "PYTHONHOME",
+        "ProgramData",
+        "SystemDrive",
+        "SystemRoot",
+        "TEMP",
+        "TMP",
+        "USERPROFILE",
+        "windir"
+      ],
+      "lpac_class46_error": 87,
+      "lpac_verification_method": "accesscheck_aap_optout_v1",
+      "lpac_access_checks": {
+        "everyone_only": {
+          "api_ok": true,
+          "allowed": false,
+          "granted": 0,
+          "error": 5
+        },
+        "package_positive": {
+          "api_ok": true,
+          "allowed": true,
+          "granted": 3,
+          "error": 0
+        },
+        "aap_only": {
+          "api_ok": true,
+          "allowed": false,
+          "granted": 0,
+          "error": 5
+        },
+        "restricted_package_only": {
+          "api_ok": true,
+          "allowed": true,
+          "granted": 2,
+          "error": 0
+        },
+        "distinct_package_bits": {
+          "api_ok": true,
+          "allowed": true,
+          "granted": 2,
+          "error": 0
+        },
+        "empty_dacl": {
+          "api_ok": true,
+          "allowed": false,
+          "granted": 0,
+          "error": 5
+        }
+      },
+      "win32_error": 50,
+      "process_exit_confirmed": true,
+      "cpu_user_ms": 0.0,
+      "cleanup_ms": 0.0
+    }
+  },
+  "native_source_sha256": "c5ce270339bc872839c9608ac0d4c21c6da8903735f8db810c499eb15269c948"
+}

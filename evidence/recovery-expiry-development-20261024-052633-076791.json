@@ -1,0 +1,194 @@
+{
+  "scope": "implementation development check, not independent acceptance",
+  "started_at_utc": "2026-10-24T05:26:33.076791+00:00",
+  "finished_at_utc": "2026-10-24T05:26:34.844599+00:00",
+  "source_before": {
+    "src/bank.py": "ae615cdede9b03a1e896483f5f7f91039c85dc179bdd97ddd43ecad55715d469",
+    "src/storage.py": "5d56c724d444e569fb5c46511a5d2b5b5543cd40ec08ed21bcfb046959a2c12d",
+    "src/recovery_state.py": "93b4b3b3702848c08bccb8ad3402d3461f40c09dfa66661996305478e8f7aba0"
+  },
+  "source_after": {
+    "src/bank.py": "ae615cdede9b03a1e896483f5f7f91039c85dc179bdd97ddd43ecad55715d469",
+    "src/storage.py": "5d56c724d444e569fb5c46511a5d2b5b5543cd40ec08ed21bcfb046959a2c12d",
+    "src/recovery_state.py": "93b4b3b3702848c08bccb8ad3402d3461f40c09dfa66661996305478e8f7aba0"
+  },
+  "source_unchanged": true,
+  "normal_database_used": false,
+  "model_calls": 0,
+  "prior_failure": "tests/.runs/task2-backend-stage/expiry-checkpoint-2zu7m_7p/observation.json",
+  "cases": [
+    {
+      "intent": "transfer",
+      "offset_microseconds": -1,
+      "status": "success",
+      "requests_status": "success",
+      "step_status": "success",
+      "attempt_status": "success",
+      "failures": 0,
+      "successful_transfers": 1,
+      "executed_audit_count": 1,
+      "confirmed_audit_count": 1,
+      "accounts": {
+        "alice-main": 990000,
+        "alice-savings": 500000,
+        "bob-main": 110000
+      },
+      "subscription_status": "active",
+      "old_confirmation_rejected": true
+    },
+    {
+      "intent": "transfer",
+      "offset_microseconds": 0,
+      "status": "expired",
+      "requests_status": "expired",
+      "step_status": "expired",
+      "attempt_status": "expired",
+      "failures": 2,
+      "successful_transfers": 0,
+      "executed_audit_count": 0,
+      "confirmed_audit_count": 0,
+      "accounts": {
+        "alice-main": 1000000,
+        "alice-savings": 500000,
+        "bob-main": 100000
+      },
+      "subscription_status": "active",
+      "old_confirmation_rejected": true
+    },
+    {
+      "intent": "transfer",
+      "offset_microseconds": 1,
+      "status": "expired",
+      "requests_status": "expired",
+      "step_status": "expired",
+      "attempt_status": "expired",
+      "failures": 2,
+      "successful_transfers": 0,
+      "executed_audit_count": 0,
+      "confirmed_audit_count": 0,
+      "accounts": {
+        "alice-main": 1000000,
+        "alice-savings": 500000,
+        "bob-main": 100000
+      },
+      "subscription_status": "active",
+      "old_confirmation_rejected": true
+    },
+    {
+      "intent": "query_subscriptions",
+      "offset_microseconds": -1,
+      "status": "success",
+      "requests_status": "success",
+      "step_status": "success",
+      "attempt_status": "success",
+      "failures": 0,
+      "successful_transfers": 0,
+      "executed_audit_count": 1,
+      "confirmed_audit_count": 1,
+      "accounts": {
+        "alice-main": 1000000,
+        "alice-savings": 500000,
+        "bob-main": 100000
+      },
+      "subscription_status": "active",
+      "old_confirmation_rejected": true
+    },
+    {
+      "intent": "query_subscriptions",
+      "offset_microseconds": 0,
+      "status": "expired",
+      "requests_status": "expired",
+      "step_status": "expired",
+      "attempt_status": "expired",
+      "failures": 2,
+      "successful_transfers": 0,
+      "executed_audit_count": 0,
+      "confirmed_audit_count": 0,
+      "accounts": {
+        "alice-main": 1000000,
+        "alice-savings": 500000,
+        "bob-main": 100000
+      },
+      "subscription_status": "active",
+      "old_confirmation_rejected": true
+    },
+    {
+      "intent": "query_subscriptions",
+      "offset_microseconds": 1,
+      "status": "expired",
+      "requests_status": "expired",
+      "step_status": "expired",
+      "attempt_status": "expired",
+      "failures": 2,
+      "successful_transfers": 0,
+      "executed_audit_count": 0,
+      "confirmed_audit_count": 0,
+      "accounts": {
+        "alice-main": 1000000,
+        "alice-savings": 500000,
+        "bob-main": 100000
+      },
+      "subscription_status": "active",
+      "old_confirmation_rejected": true
+    },
+    {
+      "intent": "cancel_subscription",
+      "offset_microseconds": -1,
+      "status": "success",
+      "requests_status": "success",
+      "step_status": "success",
+      "attempt_status": "success",
+      "failures": 0,
+      "successful_transfers": 0,
+      "executed_audit_count": 1,
+      "confirmed_audit_count": 1,
+      "accounts": {
+        "alice-main": 1000000,
+        "alice-savings": 500000,
+        "bob-main": 100000
+      },
+      "subscription_status": "cancelled",
+      "old_confirmation_rejected": true
+    },
+    {
+      "intent": "cancel_subscription",
+      "offset_microseconds": 0,
+      "status": "expired",
+      "requests_status": "expired",
+      "step_status": "expired",
+      "attempt_status": "expired",
+      "failures": 2,
+      "successful_transfers": 0,
+      "executed_audit_count": 0,
+      "confirmed_audit_count": 0,
+      "accounts": {
+        "alice-main": 1000000,
+        "alice-savings": 500000,
+        "bob-main": 100000
+      },
+      "subscription_status": "active",
+      "old_confirmation_rejected": true
+    },
+    {
+      "intent": "cancel_subscription",
+      "offset_microseconds": 1,
+      "status": "expired",
+      "requests_status": "expired",
+      "step_status": "expired",
+      "attempt_status": "expired",
+      "failures": 2,
+      "successful_transfers": 0,
+      "executed_audit_count": 0,
+      "confirmed_audit_count": 0,
+      "accounts": {
+        "alice-main": 1000000,
+        "alice-savings": 500000,
+        "bob-main": 100000
+      },
+      "subscription_status": "active",
+      "old_confirmation_rejected": true
+    }
+  ],
+  "cases_passed": 9,
+  "successful": true
+}

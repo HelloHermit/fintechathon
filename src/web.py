@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .bank import BankService
 from .model import ModelClient, ModelError
+from .main import add_isolation_arguments, create_isolated_executor, isolated_candidate_parser
 
 ASSET_DIRECTORY = Path(__file__).resolve().parent / "web_assets"
 MAX_BODY_BYTES = 8192
@@ -96,7 +97,8 @@ class BrowserHandler(BaseHTTPRequestHandler):
             supplied_token = self.headers.get("X-CSRF-Token", "")
             if len(self.headers.get_all("X-CSRF-Token", [])) != 1 or not self._allowed_source() or not hmac.compare_digest(supplied_token.encode("utf-8"), self.server.csrf_token.encode("ascii")):
                 return self._deny(403, "http_access_denied")
-            if self.path not in {"/api/message", "/api/confirm", "/api/cancel", "/api/plan/resume", "/api/plan/interrupt", "/api/plan/takeover", "/api/audit"}:
+            recovery_routes = {"/api/plan/list", "/api/plan/get", "/api/plan/recovery/prepare", "/api/plan/recovery/confirm", "/api/handover/list", "/api/handover/get", "/api/handover/record"}
+            if self.path not in {"/api/message", "/api/confirm", "/api/cancel", "/api/plan/resume", "/api/plan/interrupt", "/api/plan/takeover", "/api/audit"} | recovery_routes:
                 return self._deny(404)
             if self.headers.get_content_type() != "application/json" or self.headers.get("Transfer-Encoding") or len(self.headers.get_all("Content-Length", [])) != 1:
                 return self._deny()
@@ -129,6 +131,19 @@ class BrowserHandler(BaseHTTPRequestHandler):
             elif self.path in {"/api/plan/resume", "/api/plan/interrupt", "/api/plan/takeover"} and set(body) == {"plan_id"} and type(body["plan_id"]) is str and len(body["plan_id"]) <= 80:
                 methods = {"/api/plan/resume": bank.resume_plan, "/api/plan/interrupt": bank.interrupt_plan, "/api/plan/takeover": bank.takeover_plan}
                 response = methods[self.path](body["plan_id"])
+            elif self.path == "/api/plan/list" and body == {}:
+                response = bank.list_plans()
+            elif self.path in {"/api/plan/get", "/api/plan/recovery/prepare"} and set(body) == {"plan_id"} and type(body["plan_id"]) is str and 1 <= len(body["plan_id"]) <= 128:
+                method = bank.get_plan if self.path == "/api/plan/get" else bank.prepare_recovery
+                response = method(body["plan_id"])
+            elif self.path == "/api/plan/recovery/confirm" and set(body) == {"review_id", "recovery_code"} and type(body["review_id"]) is str and 1 <= len(body["review_id"]) <= 128 and type(body["recovery_code"]) is str and len(body["recovery_code"]) <= 128:
+                response = bank.confirm_recovery(body["review_id"], body["recovery_code"])
+            elif self.path == "/api/handover/list" and body == {}:
+                response = bank.list_handovers()
+            elif self.path == "/api/handover/get" and set(body) == {"handover_id"} and type(body["handover_id"]) is str and 1 <= len(body["handover_id"]) <= 128:
+                response = bank.get_handover(body["handover_id"])
+            elif self.path == "/api/handover/record" and {"handover_id", "disposition", "compensation"} <= set(body) <= {"handover_id", "disposition", "compensation", "note"} and all(type(body[field]) is str and 1 <= len(body[field]) <= 128 for field in ("handover_id", "disposition", "compensation")) and type(body.get("note", "")) is str and len(body.get("note", "")) <= 500:
+                response = bank.record_handover(body["handover_id"], body["disposition"], body["compensation"], body.get("note", ""))
             elif self.path == "/api/audit" and body == {}:
                 audit = bank.audit_events()
                 response = {"status": "failed" if bank.halted else "success", "data": audit, "simulated": True}
@@ -157,17 +172,26 @@ def main():
     parser.add_argument("--db", default="data/bank.db")
     parser.add_argument("--user", choices=("alice", "bob"), default="alice")
     parser.add_argument("--port", type=int, default=8765)
+    add_isolation_arguments(parser)
     arguments = parser.parse_args()
     if not 1024 <= arguments.port <= 65535:
         parser.error("端口必须为1024至65535")
-    bank = BankService(arguments.db, arguments.user)
+    executor = None
+    try:
+        executor = create_isolated_executor(arguments)
+    except Exception:
+        print("受限执行环境无法安全启动；未打开业务账本，没有回退普通执行。")
+        return 1
+    bank = None
     server = None
     try:
+        bank = BankService(arguments.db, arguments.user) if executor is None else BankService(arguments.db, arguments.user, executor=executor)
         server = LocalServer(("127.0.0.1", arguments.port), BrowserHandler)
         server.bank = bank
         server.csrf_token = secrets.token_urlsafe(32)
         try:
-            server.model = ModelClient()
+            candidate_parser = isolated_candidate_parser(executor)
+            server.model = ModelClient() if candidate_parser is None else ModelClient(candidate_parser=candidate_parser)
             server.model_configured = True
         except ModelError as error:
             server.model = UnavailableModel(error)
@@ -180,10 +204,18 @@ def main():
     except OSError:
         print("本机服务未能启动，请核对端口占用和文件权限。")
         return 1
+    except Exception:
+        print("本机服务无法安全启动；未报告业务成功，请核对账本和审计状态。")
+        return 1
     finally:
         if server is not None:
             server.server_close()
-        bank.close()
+        try:
+            if bank is not None:
+                bank.close()
+        finally:
+            if executor is not None:
+                executor.close()
     return 0
 
 

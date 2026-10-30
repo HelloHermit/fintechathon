@@ -6,6 +6,7 @@ __pycache__/
 data/
 dist/
 tests/.runs/
+.isolation/
 *.db
 *.db-wal
 *.db-shm

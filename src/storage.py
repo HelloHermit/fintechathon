@@ -44,6 +44,34 @@ def initialize(connection, now):
         source_account_id TEXT NOT NULL REFERENCES accounts,
         target_account_id TEXT NOT NULL REFERENCES accounts, amount_cents INTEGER NOT NULL,
         executed_at TEXT NOT NULL, shanghai_date TEXT NOT NULL, status TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS investment_products(
+        product_id TEXT PRIMARY KEY, name TEXT NOT NULL, risk_level TEXT NOT NULL,
+        min_days INTEGER NOT NULL, liquidity TEXT NOT NULL,
+        illustrative_annual_rate_bps INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS service_catalog(
+        service_id TEXT PRIMARY KEY, name TEXT NOT NULL, price_cents INTEGER NOT NULL CHECK(price_cents>0));
+    CREATE TABLE IF NOT EXISTS cards(
+        card_id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users,
+        account_id TEXT NOT NULL REFERENCES accounts, kind TEXT NOT NULL,
+        status TEXT NOT NULL, daily_limit_cents INTEGER NOT NULL CHECK(daily_limit_cents>0),
+        created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS budgets(
+        user_id TEXT NOT NULL REFERENCES users, budget_id TEXT NOT NULL,
+        account_id TEXT NOT NULL REFERENCES accounts, event_date TEXT NOT NULL,
+        amount_cents INTEGER NOT NULL CHECK(amount_cents>0),
+        remaining_cents INTEGER NOT NULL CHECK(remaining_cents>=0),
+        spent_cents INTEGER NOT NULL CHECK(spent_cents>=0),
+        released_cents INTEGER NOT NULL CHECK(released_cents>=0),
+        status TEXT NOT NULL CHECK(status IN ('active','exhausted','released')),
+        created_at TEXT NOT NULL, PRIMARY KEY(user_id,budget_id),
+        CHECK(amount_cents=remaining_cents+spent_cents+released_cents));
+    CREATE TABLE IF NOT EXISTS orders(
+        order_id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users,
+        budget_id TEXT NOT NULL, account_id TEXT NOT NULL REFERENCES accounts,
+        service_id TEXT NOT NULL REFERENCES service_catalog, card_id TEXT REFERENCES cards,
+        event_date TEXT NOT NULL, amount_cents INTEGER NOT NULL CHECK(amount_cents>0),
+        status TEXT NOT NULL CHECK(status='paid'), executed_at TEXT NOT NULL,
+        shanghai_date TEXT NOT NULL, FOREIGN KEY(user_id,budget_id) REFERENCES budgets(user_id,budget_id));
     CREATE TABLE IF NOT EXISTS requests(
         request_id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users,
         intent TEXT NOT NULL, params_json TEXT NOT NULL, tier TEXT NOT NULL,
@@ -66,6 +94,23 @@ def initialize(connection, now):
         raw_input_redacted TEXT NOT NULL, intent TEXT NOT NULL, tier TEXT NOT NULL,
         params_redacted TEXT NOT NULL, event TEXT NOT NULL, result TEXT NOT NULL,
         reason TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS recovery_plans(
+        plan_id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users,
+        snapshot_json TEXT NOT NULL, revision INTEGER NOT NULL CHECK(revision>0),
+        created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS recovery_handovers(
+        handover_id TEXT PRIMARY KEY, plan_id TEXT NOT NULL UNIQUE REFERENCES recovery_plans,
+        user_id TEXT NOT NULL REFERENCES users, status TEXT NOT NULL,
+        created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS recovery_handover_entries(
+        entry_id TEXT PRIMARY KEY, handover_id TEXT NOT NULL REFERENCES recovery_handovers,
+        actor_user_id TEXT NOT NULL REFERENCES users, actor_role TEXT NOT NULL,
+        recorded_at TEXT NOT NULL, disposition TEXT NOT NULL,
+        compensation TEXT NOT NULL, note_redacted TEXT NOT NULL);
+    CREATE TRIGGER IF NOT EXISTS handover_entry_no_update BEFORE UPDATE ON recovery_handover_entries
+        BEGIN SELECT RAISE(ABORT,'handover entries are append only'); END;
+    CREATE TRIGGER IF NOT EXISTS handover_entry_no_delete BEFORE DELETE ON recovery_handover_entries
+        BEGIN SELECT RAISE(ABORT,'handover entries are append only'); END;
     CREATE TRIGGER IF NOT EXISTS audit_no_update BEFORE UPDATE ON audit_log
         BEGIN SELECT RAISE(ABORT,'audit log is append only'); END;
     CREATE TRIGGER IF NOT EXISTS audit_no_delete BEFORE DELETE ON audit_log
@@ -95,6 +140,12 @@ def initialize(connection, now):
         request_columns = {row[1] for row in connection.execute("PRAGMA table_info(requests)")}
         if "binding_json" not in request_columns:
             connection.execute("ALTER TABLE requests ADD COLUMN binding_json TEXT NOT NULL DEFAULT '{}'")
+        for column in ("plan_id", "step_id", "result_json"):
+            if column not in request_columns:
+                connection.execute("ALTER TABLE requests ADD COLUMN " + column + " TEXT")
+        audit_columns = {row[1] for row in connection.execute("PRAGMA table_info(audit_log)")}
+        if "plan_id" not in audit_columns:
+            connection.execute("ALTER TABLE audit_log ADD COLUMN plan_id TEXT")
         if connection.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
             connection.executemany("INSERT INTO users VALUES(?,?)", [("alice", "小阚"), ("bob", "小王")])
             connection.executemany("INSERT INTO accounts VALUES(?,?,?)", [
@@ -120,6 +171,19 @@ def initialize(connection, now):
                 ("future-bill", "alice", "alice-main", 800, "餐饮", next_month.isoformat(), "scheduled", "expense"),
                 ("bob-bill", "bob", "bob-main", 3990, "视频会员", first_day.isoformat(), "success", "expense")]
             connection.executemany("INSERT INTO transactions VALUES(?,?,?,?,?,?,?,?)", rows)
+        # 新目录只补不存在的固定行；重启不重置已办理的卡、预算或订单。
+        connection.executemany("INSERT OR IGNORE INTO investment_products VALUES(?,?,?,?,?,?)", [
+            ("p-cash", "模拟活期A", "low", 1, "immediate", 180),
+            ("p-flex", "模拟灵活B", "medium", 7, "flexible", 220),
+            ("p-steady", "模拟稳健C", "medium", 90, "locked", 260),
+            ("p-growth", "模拟成长D", "high", 365, "locked", 420)])
+        connection.executemany("INSERT OR IGNORE INTO service_catalog VALUES(?,?,?)", [
+            ("flower-basic", "模拟鲜花", 12900), ("cake-basic", "模拟蛋糕", 9900)])
+        for owner in ("alice", "bob"):
+            account_id = owner + "-main"
+            if connection.execute("SELECT 1 FROM accounts WHERE user_id=? AND account_id=?", (owner, account_id)).fetchone():
+                connection.execute("INSERT OR IGNORE INTO cards VALUES(?,?,?,?,?,?,?)",
+                                   ("card-" + account_id, owner, account_id, "debit", "active", 100000, now.isoformat()))
         connection.commit()
     except Exception:
         connection.rollback()

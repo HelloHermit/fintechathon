@@ -1,0 +1,57 @@
+{
+  "type": "implementation_development_checks_only",
+  "real_model_calls": 0,
+  "normal_database_or_configuration_accessed": false,
+  "cases": [
+    {
+      "case": "valid transfer worker is called before any balance write",
+      "passed": true
+    },
+    {
+      "case": "worker timeout fails and appends failure without business write",
+      "passed": true
+    },
+    {
+      "case": "monitor audit failure halts BankService as well",
+      "passed": true
+    },
+    {
+      "case": "strict type comparison rejects worker boolean amount",
+      "passed": true
+    },
+    {
+      "case": "late timeout returns expired and rolls back savepoint without clearing failures",
+      "passed": true
+    },
+    {
+      "case": "business failure audit unavailable rolls back and halts",
+      "passed": true
+    },
+    {
+      "case": "failed isolated predecessor stops DAG",
+      "passed": true
+    },
+    {
+      "case": "raw synthetic model JSON uses selected parser without host fallback",
+      "passed": true
+    },
+    {
+      "case": "isolated candidate parser monitor failure is audited and halts host business",
+      "passed": true
+    },
+    {
+      "case": "CLI and Web executor startup failure precedes bank open",
+      "passed": true
+    },
+    {
+      "case": "direct BankService guards runtime and monitor paths before connect",
+      "passed": true
+    },
+    {
+      "case": "direct BankService rejects existing monitor hardlink alias",
+      "passed": true
+    }
+  ],
+  "passed": 12,
+  "system_isolation_claimed": false
+}

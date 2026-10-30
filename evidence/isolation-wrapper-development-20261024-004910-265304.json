@@ -1,0 +1,279 @@
+{
+  "type": "implementation_wrapper_development_checks_only",
+  "started_at": "2026-10-24T00:49:10.250219+08:00",
+  "finished_at": "2026-10-24T00:49:10.265304+08:00",
+  "duration_seconds": 0.016,
+  "cases": [
+    {
+      "case": "invalid task 0",
+      "expected": "started+finished invalid_task, no backend run",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.251324+08:00",
+      "finished_at": "2026-10-24T00:49:10.251868+08:00"
+    },
+    {
+      "case": "invalid task 1",
+      "expected": "started+finished invalid_task, no backend run",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.251868+08:00",
+      "finished_at": "2026-10-24T00:49:10.252401+08:00"
+    },
+    {
+      "case": "invalid task 2",
+      "expected": "started+finished invalid_task, no backend run",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.252401+08:00",
+      "finished_at": "2026-10-24T00:49:10.252401+08:00"
+    },
+    {
+      "case": "invalid task 3",
+      "expected": "started+finished invalid_task, no backend run",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.252401+08:00",
+      "finished_at": "2026-10-24T00:49:10.252921+08:00"
+    },
+    {
+      "case": "invalid task 4",
+      "expected": "started+finished invalid_task, no backend run",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.252921+08:00",
+      "finished_at": "2026-10-24T00:49:10.253463+08:00"
+    },
+    {
+      "case": "invalid payload 0",
+      "expected": "started+finished invalid_input, no backend run",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.253463+08:00",
+      "finished_at": "2026-10-24T00:49:10.254002+08:00"
+    },
+    {
+      "case": "invalid payload 1",
+      "expected": "started+finished invalid_input, no backend run",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.254002+08:00",
+      "finished_at": "2026-10-24T00:49:10.254002+08:00"
+    },
+    {
+      "case": "invalid payload 2",
+      "expected": "started+finished invalid_input, no backend run",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.254002+08:00",
+      "finished_at": "2026-10-24T00:49:10.254002+08:00"
+    },
+    {
+      "case": "invalid payload 3",
+      "expected": "started+finished invalid_input, no backend run",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.254002+08:00",
+      "finished_at": "2026-10-24T00:49:10.255020+08:00"
+    },
+    {
+      "case": "deep recursive input",
+      "expected": "started+finished invalid_input, no backend run",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.255706+08:00",
+      "finished_at": "2026-10-24T00:49:10.256720+08:00"
+    },
+    {
+      "case": "explicit invalid_input preserves metadata",
+      "expected": "safe actual backend metadata and invalid_input finished persisted",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.256720+08:00",
+      "finished_at": "2026-10-24T00:49:10.257235+08:00"
+    },
+    {
+      "case": "close during backend run",
+      "expected": "close cancellation overrides forged success; finished persists; resources release",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.257235+08:00",
+      "finished_at": "2026-10-24T00:49:10.258117+08:00"
+    },
+    {
+      "case": "cancel while waiting shared identity lock",
+      "expected": "cancel before holder release; no second backend execution",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.258117+08:00",
+      "finished_at": "2026-10-24T00:49:10.258117+08:00"
+    },
+    {
+      "case": "old monitor replaced trigger",
+      "expected": "reject replaced same-name trigger without repair or worker construction",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.258719+08:00",
+      "finished_at": "2026-10-24T00:49:10.258719+08:00"
+    },
+    {
+      "case": "monitor database hardlink",
+      "expected": "invalid_input before SQLite/backend open",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.258719+08:00",
+      "finished_at": "2026-10-24T00:49:10.258719+08:00"
+    },
+    {
+      "case": "monitor lease hardlink",
+      "expected": "invalid_input before SQLite/backend open",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.258719+08:00",
+      "finished_at": "2026-10-24T00:49:10.259733+08:00"
+    },
+    {
+      "case": "public path properties readonly",
+      "expected": "all three property assignments fail unchanged",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.259733+08:00",
+      "finished_at": "2026-10-24T00:49:10.259733+08:00"
+    },
+    {
+      "case": "probe cleanup on success",
+      "expected": "only copied probe removed, finished persists",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.259733+08:00",
+      "finished_at": "2026-10-24T00:49:10.262552+08:00"
+    },
+    {
+      "case": "probe cleanup on failure",
+      "expected": "only copied probe removed, finished persists",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.262552+08:00",
+      "finished_at": "2026-10-24T00:49:10.264292+08:00"
+    },
+    {
+      "case": "same moniker runtime copies serialize",
+      "expected": "different runtime paths share identity lock; max concurrency1",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.264292+08:00",
+      "finished_at": "2026-10-24T00:49:10.265304+08:00"
+    },
+    {
+      "case": "monitor profile readable root",
+      "expected": "monitor profile sibling rejected before construction",
+      "ran": true,
+      "passed": false,
+      "actual": {
+        "exception_type": "FileExistsError",
+        "safe_message": "unexpected development exception; no input text recorded"
+      },
+      "started_at": "2026-10-24T00:49:10.265304+08:00",
+      "finished_at": "2026-10-24T00:49:10.265304+08:00"
+    }
+  ],
+  "total": 21,
+  "passed": 0,
+  "failed": 21,
+  "source_sha256_at_start": "efa93a74f3187b966c22a5867597407aee333024f833df55c4f608e4b91f6b61",
+  "source_sha256_at_finish": "efa93a74f3187b966c22a5867597407aee333024f833df55c4f608e4b91f6b61",
+  "run_directory": "C:\\fintechathon\\tests\\.runs\\wrapper-development-20261012-013921-7f00ba8b",
+  "helper_sha256": "fcb3728453bee3bbda84d749ce2bd66a3d3f71dffccfc2628f95a501b5ac4803",
+  "only_injected_dependencies": [
+    "checked_runtime",
+    "WindowsBackend"
+  ],
+  "native_runtime_configuration_accessed": false,
+  "normal_database_accessed": false,
+  "real_environment_or_credentials_accessed": false,
+  "real_worker_or_model_calls": 0,
+  "system_isolation_claimed": false,
+  "independent_acceptance_claimed": false,
+  "owned_synthetic_identity_locks_removed": 0,
+  "limits": "Backend replies and configuration checks are substitutes; actual SQLite, file links, threads and monitor/identity leases exercise the host wrapper only. Thread waits bound failures; assertions use explicit events, never timed sleeps to declare passing."
+}

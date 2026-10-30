@@ -1,0 +1,16 @@
+{
+  "scope": "implementation CLI integration, actual screen text parsed only in memory; piped input does not prove real human terminal or MFA",
+  "passed": true,
+  "exit_code": 0,
+  "balances": {
+    "alice-main": 990000,
+    "alice-savings": 500000,
+    "bob-main": 110000
+  },
+  "transfer_count": 1,
+  "amount_cents": 10000,
+  "handover_status": "closed_record",
+  "disposition_entries": 2,
+  "actual_model_calls": 0,
+  "codes_written_to_evidence": false
+}

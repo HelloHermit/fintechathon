@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+from pathlib import Path
 from typing import Any
 
 from src.bank import BankService
@@ -18,6 +20,14 @@ INTENT_NAMES = {
     "query_subscriptions": "查询模拟订阅",
     "cancel_subscription": "取消模拟订阅",
     "transfer": "模拟转账",
+    "query_investments": "查询模拟产品", "compare_investments": "比较模拟产品",
+    "match_investments": "按条件匹配模拟产品", "query_cards": "查询本人模拟卡",
+    "apply_virtual_card": "申请模拟虚拟卡", "set_card_limit": "修改模拟卡限额",
+    "query_services": "查询模拟服务", "query_budgets": "查询本人预算",
+    "query_orders": "查询本人订单", "reserve_budget": "保留模拟预算",
+    "release_budget": "释放剩余预算", "place_order": "支付模拟订单",
+    "purchase_investment": "模拟产品申购（红档）", "redeem_investment": "模拟产品赎回（红档）",
+    "report_card_lost": "模拟卡挂失（红档）", "restore_card": "模拟卡解挂（红档）",
 }
 STATUS_NAMES = {
     "success": "成功",
@@ -148,22 +158,88 @@ def _show_help() -> None:
     print("/candidate 只提交人工指定候选，不调用模型，不能作为真实 AI 接入证据。")
 
 
+def add_isolation_arguments(parser: argparse.ArgumentParser) -> None:
+    """CLI和Web共用可信启动选项；模式必须显式选择。"""
+    parser.add_argument("--isolated-tools", action="store_true", help="固定工具和模型候选解析使用受限执行器，失败不降级")
+    parser.add_argument("--isolation-runtime", default=".isolation/runtime", help="已按公开步骤准备的专用只读运行时")
+    parser.add_argument("--isolation-monitor", default=".isolation/monitor.db", help="独立监控账本，不能与业务库相同")
+
+
+def create_isolated_executor(arguments):
+    """在打开业务账本前检查并创建；构造失败由入口安全退出。"""
+    if not arguments.isolated_tools:
+        return None
+    from .isolation import IsolatedExecutor, IsolationError
+    runtime_path = Path(arguments.isolation_runtime).resolve()
+    monitor_path = Path(arguments.isolation_monitor).resolve()
+    if monitor_path.is_relative_to(runtime_path):
+        raise IsolationError("invalid_input", {})
+    if arguments.db != ":memory:":
+        bank_path = Path(arguments.db).resolve()
+        if bank_path.exists() and bank_path.stat().st_nlink > 1:
+            raise IsolationError("invalid_input", {})
+        same_file = bank_path == monitor_path
+        if bank_path.exists() and monitor_path.exists():
+            same_file = same_file or os.path.samefile(bank_path, monitor_path)
+        if same_file or bank_path.is_relative_to(runtime_path):
+            raise IsolationError("invalid_input", {})
+    executor = IsolatedExecutor(runtime_path, monitor_path)
+    try:
+        # 登记后的专用profile同样允许worker读取，不能在其中放业务账本。
+        readable_directories = getattr(executor, "readable_directories", (runtime_path,))
+        if arguments.db != ":memory:" and any(
+                bank_path.is_relative_to(Path(directory).resolve()) for directory in readable_directories):
+            raise IsolationError("invalid_input", {})
+    except Exception:
+        executor.close()
+        raise
+    return executor
+
+
+def isolated_candidate_parser(executor):
+    """只向worker传原模型JSON；网络、密钥与账本均留在宿主。"""
+    if executor is None:
+        return None
+    return lambda text: executor.execute("parse_candidate", {"text": text})
+
+
 def main(argv: list[str] | None = None) -> int:
     """创建一名固定模拟用户的会话；重新启动不会重置数据库或锁定。"""
-    parser = argparse.ArgumentParser(description="FinTechathon 三场景模拟银行 AI 原型")
+    parser = argparse.ArgumentParser(description="FinTechathon 六场景模拟银行 AI 原型")
     parser.add_argument("--db", default="data/bank.db", help="SQLite 模拟数据路径，已有数据库不重置")
     parser.add_argument("--user", choices=("alice", "bob"), default="alice", help="启动时固定模拟身份")
+    add_isolation_arguments(parser)
     arguments = parser.parse_args(argv)
     for stream in (sys.stdin, sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8")
+    executor = None
     try:
-        service = BankService(arguments.db, user_id=arguments.user)
+        executor = create_isolated_executor(arguments)
     except Exception:
+        print("受限执行环境无法安全启动；未打开业务账本，没有回退普通执行。", file=sys.stderr)
+        return 1
+    try:
+        service = BankService(arguments.db, user_id=arguments.user) if executor is None else BankService(arguments.db, user_id=arguments.user, executor=executor)
+    except Exception:
+        if executor is not None:
+            executor.close()
         print("模拟数据库无法安全启动，请检查路径、写入权限及审计状态；未执行业务。", file=sys.stderr)
         return 1
     try:
-        model: ModelClient | _UnavailableModel = ModelClient()
+        return _run_session(arguments, service, isolated_candidate_parser(executor))
+    finally:
+        try:
+            service.close()
+        finally:
+            if executor is not None:
+                executor.close()
+
+
+def _run_session(arguments, service, candidate_parser=None) -> int:
+    """交互逻辑共用旧业务规则；资源由main统一释放。"""
+    try:
+        model: ModelClient | _UnavailableModel = ModelClient() if candidate_parser is None else ModelClient(candidate_parser=candidate_parser)
         print("模型配置已读取。发送自然语言后才能验证真实调用是否成功。")
     except ModelError as error:
         print(str(error))
@@ -230,8 +306,6 @@ def main(argv: list[str] | None = None) -> int:
                 print("本次请求处理失败；没有报告成功。请核对 /audit，审计不可用时停止业务。\n")
     except KeyboardInterrupt:
         print("\n会话已中断。重启时旧确认会失效，锁定计数保留。")
-    finally:
-        service.close()
     print("会话已结束。模拟数据库已保留。")
     return 0
 

@@ -1,11 +1,15 @@
 # 公开接口与独立测试约定（2026-10-10）
 
+**六场景v4（2026-10-25）**：原六工具及调用入口保留，新增16工具、固定产品/服务数据、预算占用、卡限额、统一资金累计和确认绑定见[SIX_SCENARIO_API.md](SIX_SCENARIO_API.md)。该文覆盖旧“仅六项”范围；红档新动作即时拒绝，即使已有合成强验证登记亦不生成可执行请求。原transfer红档流程保留但仍不执行。独立新增验收与旧回归分开留痕。
+
 Python 3.10+，仅标准库。全部银行数据及平台行为模拟；模型配置未完成前不算 AI 接入通过。本文件是实现契约，测试不能阅读业务实现确定期望。
 
-`from src.bank import BankService`；`BankService(database_path, user_id="alice", clock=None, audit_hook=None)`。新数据库自动种入夹具；已有数据不重置。身份由构造参数固定（alice/bob），聊天不能改变。构造时该用户旧 pending 失效并记 restart 事件，锁定保留；一会话一实例。
+task3的多轮补充、人类参数来源、上下文终结、澄清候选及ModelClient公开元数据见[CONTEXT_API](CONTEXT_API.md)，覆盖证据见[35](../docs/35-context-delivery.md)。完整但仍包在clarification中的draft继续按澄清处理，不能直接执行；模型只提出正常候选，代码另行确认和执行业务。
+
+`from src.bank import BankService`；`BankService(database_path, user_id="alice", clock=None, audit_hook=None, *, executor=None, checkpoint_hook=None)`。新数据库自动种入夹具；已有数据不重置。身份由构造参数固定（alice/bob），聊天不能改变。构造时该用户旧 pending 失效并记 restart 事件，锁定保留；一会话一实例。可选受限工具执行器见[隔离契约](DOCKER_ISOLATION_API.md)，默认None为历史可信模式。checkpoint_hook仅离线测试检查点，不是网络/用户可配置入口；持久计划、恢复、接管的当前契约见[RECOVERY_API.md](RECOVERY_API.md)。
 
 - `propose(candidate, raw_input="")`：候选意图，不代表授权。新请求使旧 pending 失效。单步 `{"intent":"transfer","params":{"account_id":"alice-main","contact_id":"wang","amount_cents":10000}}`。额外字段、非法类型拒绝；金额必须是正整数分（拒绝 bool）。
-- `confirm(request_id, confirmation_code)`：固定接口表达明确同意，不能修改目标/金额。确认码只返回 pending 响应，在内存保留，不进数据库、审计、模型。它不是 MFA。
+- `confirm(request_id, confirmation_code)`：固定接口表达明确同意，不能修改目标/金额。确认码只返回黄档 pending 响应，在内存保留，不进数据库、审计、模型。它不是 MFA。期限到达`expires_at`即expired；执行前及提交前均须复检，确认审计或成功审计期间跨期时，回滚本次业务、成功日志和计数清零，只保存过期结果，旧确认不可再用。
 - `strong_verify(request_id, password, totp_code, *, confirmed=False)`：红档固定入口（规则全文见 `docs/22-mfa-strong-verification.md`）。请求须本人red/pending、未过期且绑定参数/实际目标有效；无效请求`invalid_confirmation`、不计因素失败；期限到达`expires_at`即expired。用户核对operation后本人明确同意，可信调用者才能传`confirmed=True`；缺少/非bool真值`explicit_confirmation_required`，不校验因素、不计失败、不消费时间步。密码与动态码只在内存，不进数据库/审计/模型/响应。两因素成功：明确确认、消费时间步、清零计数、strong_verified及请求终结/隔离拒绝日志同事务保存，响应`rejected/isolation_unavailable`、`strong_verification="passed"`，业务不变；审计失败全部回滚、failed/audit_unavailable、停后续业务。失败统一verification_failed，连续3次locked十分钟；新有效请求重用已使用步按失败计，旧终结请求重提invalid_confirmation且不计数。对red调用黄档confirm返回strong_verification_required，不计失败。
 - 红档 propose 分两种：用户**未登记**强验证（`strong_auth` 无行）时维持原样 `rejected/strong_verification_unavailable`、不建请求；**已登记**时建立 `pending/tier=red` 请求，**无六位确认码**，5 分钟有效期、新请求/取消/超时失效规则与黄档相同。
 - 登记只经可信本机交互终端：`python scripts/mfa_enroll.py --db <账本路径> --user alice`。公开本地方法`enroll_strong_auth(password,totp_secret,totp_code=None)`验证密码8–128字、合法至少20字节base32秘密及当前持有码；无/错误码invalid_totp_code且无登记，登记成功消费对应时间步。每用户一份，重复already_enrolled；本地管理`unenroll_strong_auth()`或CLI `--reset`删除登记并作废本人pending/未完成计划，保留transfer失败锁定与replay步。登记失败不算有效transfer失败、不清已有计数。密码无回显，秘密只登记当场显示一次；模型、网页、聊天均无登记入口。
@@ -30,7 +34,7 @@ Python 3.10+，仅标准库。全部银行数据及平台行为模拟；模型�
 
 候选计划格式：`{"steps":[{"id":"bill","intent":"analyze_bills","params":{},"depends_on":[]},{"id":"subs","intent":"query_subscriptions","params":{},"depends_on":["bill"]}]}`，最多8步，校验唯一编号、依赖、环、白名单。控制接口完成后追加，不能预称完整 DAG 已实测。
 
-现已实现控制接口：提交合法计划会按实际依赖推进至第一个黄档等待节点，响应含 `plan_id` 和 `plan.steps`，当前节点另有 request_id/confirmation_code。`confirm` 只确认这一节点；之后 `resume_plan(plan_id)` 才推进下一步。重复 resume 不生成新确认、不执行 pending 节点；取消/失败/超时的前置步骤使计划停止。`interrupt_plan(plan_id)` 和 `takeover_plan(plan_id)` 停止未完成节点并使旧确认失效；回执逐项列已完成/未完成。仅未提交的事务可回滚，已成功转账绝不自动反转；已取消订阅若要恢复需人工另行处理，目前无恢复白名单工具。计划保存在会话内存，重启不能恢复旧授权。候选依赖图运行不等于真实模型规划已接通，也不等于完整补偿回退能力。
+提交合法计划会推进至第一个黄档等待节点，响应含 `plan_id` 和 `plan.steps`。`confirm` 只确认本节点，之后 `resume_plan(plan_id)` 才推进下一步；重复resume不执行pending节点。计划、节点结果/尝试和中断原因现已持久化，`list_plans()`、`get_plan(plan_id)`可查看本人历史。重启使旧确认失效且不自动继续；经`prepare_recovery(plan_id)`核对当前绑定与业务状态，再`confirm_recovery(review_id,recovery_code)`只保存本次恢复同意，仍须显式resume并为黄档取得新确认。取消、参数/绑定变化和期限使旧许可失效。`interrupt_plan`与`takeover_plan`停止未完成节点，后者持久登记人工事项；事项可查询、追加处置和关闭记录，详见[当前恢复契约](RECOVERY_API.md)。只回滚未提交事务，成功转账无自动反转，退订无恢复工具。候选图不等于通用自然语言规划或完整补偿能力。
 
 `plan.steps` 是列表，每项有 id/intent/params/depends_on/request_id/status。节点状态 not_started/pending/success/rejected/failed/cancelled/expired；计划状态 ready/waiting_confirmation/success/failed/interrupted/human_takeover。新用户任务会停止旧计划剩余节点，即便刚完成前一个节点也不能再复用旧计划续办。停止回执保留实际已完成状态，不自动反转已提交的业务。
 

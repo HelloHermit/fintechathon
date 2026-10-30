@@ -1,0 +1,66 @@
+Source: mcp__cua_repl DOM snapshots; root executed independent author's steps. Same navigation/header/footer as red snapshot. The following is the raw changing log/confirmation DOM, not an inferred business result; independent author separately verifies SQLite.
+Console errors/warnings after cancellation: []
+
+Cancellation log:
+      - article:
+        - heading "模拟转账" [level=3]
+        - generic: 已取消
+        - paragraph: 已取消，旧确认立即失效。
+        - paragraph: 代码判定：红档
+        - paragraph: 请求编号：b84c7f3da9584a6aa387309d7cc39a96
+Confirmation region:
+    - heading "当前没有待确认操作" [level=3]
+    - paragraph:
+      - text: 目标、金额与影响将先展示，
+      - text: 只有点击确认后才会执行。
+
+Yellow waiting inspection (booleans only; no active code, text or screenshot exported):
+{
+  "confirmVisible": true,
+  "confirmEnabled": true,
+  "cancelVisible": true,
+  "cancelEnabled": true,
+  "has_expiry": true,
+  "has_operation": true,
+  "has_yellow_tier": true,
+  "visible_otp_fields": 0,
+  "visible_password_fields": 0
+}
+
+After click of observed button "确认这次操作", pending cleared first while HTTP was still processing; this intermediate state was not treated as success. Next DOM snapshot shows:
+      - article:
+        - paragraph: 你
+        - paragraph: 受控黄档请求
+      - article:
+        - heading "模拟转账" [level=3]
+        - generic: 等待确认
+        - paragraph: 这是模拟操作。请核对下列完整参数，再用固定确认入口同意；5分钟有效。
+        - paragraph: 代码判定：黄档
+        - paragraph: 请求编号：5b9f91aed60e4208a1812a65ba546e73
+      - article:
+        - heading "模拟转账" [level=3]
+        - generic: 已完成
+        - paragraph: 模拟操作已完成，结果来自账本。
+        - paragraph: 代码判定：黄档
+        - paragraph: 本次模拟转账
+        - paragraph: ¥ 100.00
+        - term: 转出账户
+        - definition: alice-main
+        - term: 收款账户
+        - definition: bob-main
+        - term: 今日已成功转出
+        - definition: ¥ 100.00
+        - paragraph: 请求编号：5b9f91aed60e4208a1812a65ba546e73
+    - textbox "向银行助手描述需求" [active]:
+      - /placeholder: 例如：这个月已经花了多少？
+    - button "发送" [disabled]:
+      - generic: 发送
+    - status
+  - complementary "操作确认和计划":
+    - heading "操作确认" [level=2]
+    - paragraph: 需要你确认的操作会显示在这里。
+    - heading "当前没有待确认操作" [level=3]
+    - paragraph:
+      - text: 目标、金额与影响将先展示，
+      - text: 只有点击确认后才会执行。
+Console errors/warnings after completed success: []

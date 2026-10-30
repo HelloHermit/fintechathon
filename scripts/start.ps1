@@ -4,7 +4,10 @@
     [string]$User = "alice",
     [switch]$Web,
     [ValidateRange(1024, 65535)]
-    [int]$Port = 8765
+    [int]$Port = 8765,
+    [switch]$IsolatedTools,
+    [string]$IsolationRuntime = ".isolation/runtime",
+    [string]$IsolationMonitor = ".isolation/monitor.db"
 )
 
 # 不安装依赖、不重置数据库。只寻找能运行标准库原型的 Python 3.10+。
@@ -52,6 +55,7 @@ try {
     if ($Web) { $moduleName = "src.web" }
     $launchArguments = $pythonArguments + @("-m", $moduleName, "--db", $DatabasePath, "--user", $User)
     if ($Web) { $launchArguments += @("--port", $Port) }
+    if ($IsolatedTools) { $launchArguments += @("--isolated-tools", "--isolation-runtime", $IsolationRuntime, "--isolation-monitor", $IsolationMonitor) }
     & $pythonExecutable @launchArguments
     $exitCode = $LASTEXITCODE
 } finally {

@@ -1,0 +1,13 @@
+{
+  "scope": "implementation_side_pure_boundary_checks_not_native_acceptance",
+  "checks": [
+    "combined output exactly at limit refused and storage bounded",
+    "all six native budgets reject increases",
+    "unsupported class46 requires complete six-control proof",
+    "each of six mismatching access masks independently refuses identity",
+    "supported direct LPAC=false cannot be overruled"
+  ],
+  "count": 5,
+  "result": "passed",
+  "native_source_sha256": "c5ce270339bc872839c9608ac0d4c21c6da8903735f8db810c499eb15269c948"
+}

@@ -1,0 +1,93 @@
+{
+  "type": "implementation_development_report_only",
+  "record_created_at": "2026-10-12T01:30:43.285017+08:00",
+  "timezone": "Asia/Shanghai (+08:00)",
+  "author_role": "业务隔离接入实现者；不是独立验收作者。",
+  "ran": true,
+  "passed": 17,
+  "exit_code": 0,
+  "tool_reported_wall_seconds": 1.142138,
+  "exact_start_end_not_recorded": true,
+  "results_file_last_modified_at": "2026-10-12T01:29:52.481168+08:00",
+  "development_helper_path": "C:\\Users\\KindHermit\\AppData\\Local\\Temp\\fintech-isolation-integration-a2b6ee6e404344709daf10506a7ba387\\development_checks.py",
+  "development_helper_sha256": "be587817caffeaabe9f43712dca4cca22d9507407155aa38fbeb6feb7021f332",
+  "command": "& 'C:/Users/KindHermit/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe' 'C:/Users/KindHermit/AppData/Local/Temp/fintech-isolation-integration-a2b6ee6e404344709daf10506a7ba387/development_checks.py'",
+  "raw_results_relative_path": "evidence/isolation-integration-development-20261012-013043-results.json",
+  "raw_results_sha256": "2cd4a9034a2ba9e00fe5e4b91be56ee057d9645093834dd2452d59695f2ec8a2",
+  "previous_12_case_details": "evidence/isolation-integration-development-20261012-011847.json",
+  "new_case_details": [
+    {
+      "input": "真实IsolatedExecutor wrapper构造但以临时合成checked_runtime替身提供runtime/profile；不启动worker。BankService业务目标分别在runtime、profile/AC、profile兄弟目录。",
+      "expected": "readable_directories包括runtime及整个profile根；三个目标在connect前拒绝。",
+      "actual": "规范路径属性一致；三个目标ValueError；connect保护未触发；业务文件未创建；测试finally executor.close后connection/lease_file均None。",
+      "ran": true,
+      "passed": true,
+      "method": "只替换配置检查为自建临时路径；实际wrapper SQLite与资源close；Bank connect断言保护。"
+    },
+    {
+      "input": "临时runtime内假标记文件的硬链接别名作为runtime外业务路径；监控库不同。",
+      "expected": "selected mode st_nlink>1拒绝；Bank不得connect；CLI共享helper不得创建executor。",
+      "actual": "Bank ValueError；shared helper IsolationError invalid_input；connect及executor构造保护未触发。",
+      "ran": true,
+      "passed": true,
+      "method": "os.link仅自建合成标记；公开构造与helper调用；无真实账本。"
+    },
+    {
+      "input": "shared helper创建开发executor后，业务库路径落在其readable_directories中的profile/AC。",
+      "expected": "关闭新executor并拒绝；不创建业务文件。",
+      "actual": "IsolationError invalid_input；executor.closed=True；业务目标不存在。",
+      "ran": true,
+      "passed": true,
+      "method": "公开helper及具公开路径属性的开发替身，close标记。"
+    },
+    {
+      "input": "CLI/Web均选择隔离，业务库落在profile根的Settings兄弟目录。",
+      "expected": "共用helper拒绝，两入口exit1，不调用BankService，两个已构造executor都关闭。",
+      "actual": "两入口exit1；BankService保护未触发；两个executor.closed=True；业务文件未创建。",
+      "ran": true,
+      "passed": true,
+      "method": "CLI/Web实际入口解析；IsolatedExecutor构造替身；BankService断言保护；无浏览器/模型调用。"
+    },
+    {
+      "input": "readable_directories和monitor之外的新独立模拟业务路径，以及:memory:。",
+      "expected": "保留初始化行为；无工具真正执行时不调用worker。",
+      "actual": "两种启动初始余额均1000000/500000/100000分；worker调用0；Bank均关闭。",
+      "ran": true,
+      "passed": true,
+      "method": "真实BankService在临时模拟SQLite及内存SQLite初始化；公开路径属性开发替身。"
+    }
+  ],
+  "preserved_first_new_fixture_failure": "evidence/isolation-integration-development-20261012-012946-short-path-fixture-failure.json",
+  "changes": [
+    "BankService开库前拒绝所有executor.readable_directories内业务路径；缺该属性的开发替身保留runtime目录保护。",
+    "selected mode已有业务文件硬链接计数大于1时，在connect前拒绝；保留monitor samefile检查。",
+    "CLI/Web共用create_isolated_executor在创建executor后检查profile可读路径；失败先关闭新executor；硬链接业务路径在executor创建前拒绝。"
+  ],
+  "final_checks": {
+    "python_py_compile": {
+      "files": [
+        "src/bank.py",
+        "src/main.py"
+      ],
+      "exit_code": 0
+    },
+    "git_diff_check": {
+      "files": [
+        "src/bank.py",
+        "src/main.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "source_sha256_at_record_capture": {
+    "src/bank.py": "65b170a8eda4c6681f06c9891d8e7fc96d88e7ad5c7d2be52761373a82d88208",
+    "src/main.py": "75358b5b163ddd12d78b3e67d84230dc7c7bdde9cd188f34c040472746522abf"
+  },
+  "real_model_calls": 0,
+  "normal_database_or_configuration_accessed": false,
+  "raw_database_delivered": false,
+  "secret_or_effective_verification_code_recorded": false,
+  "system_isolation_claimed": false,
+  "independent_acceptance_claimed": false,
+  "limits": "17项为实现侧路径与宿主事务接入开发检查。实际wrapper属性检查替换了配置检查，用自建临时profile路径及监控SQLite；因此不是实际LPAC/profile/ACL证明。没有启动真实worker、读取现有隔离配置、正常账本/凭据、使用供应商或网页；根负责完整回归和独立验收。"
+}

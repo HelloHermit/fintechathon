@@ -1,0 +1,1 @@
+{"status": "passed", "groups_passed": [9], "propose_calls_started": 2, "report": "C:\\fintechathon\\evidence\\six-live-20261028-171955-229821\\report.json"}

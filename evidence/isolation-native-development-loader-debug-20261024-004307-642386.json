@@ -1,0 +1,143 @@
+{
+  "scope": "implementation_side_loader_debug_not_acceptance",
+  "debug_only_this_process": true,
+  "events": [
+    {
+      "event": 3,
+      "pid": 32492,
+      "module_basename": "python.exe"
+    },
+    {
+      "event": 6,
+      "pid": 32492,
+      "module_basename": "ntdll.dll"
+    },
+    {
+      "event": 6,
+      "pid": 32492,
+      "module_basename": "kernel32.dll"
+    },
+    {
+      "event": 6,
+      "pid": 32492,
+      "module_basename": "KernelBase.dll"
+    },
+    {
+      "event": 7,
+      "pid": 32492
+    },
+    {
+      "event": 7,
+      "pid": 32492
+    },
+    {
+      "event": 5,
+      "pid": 32492,
+      "exit_code": 3221225794
+    }
+  ],
+  "debug_deadline_seconds": 6,
+  "host_system_call_policy_flags": 0,
+  "debug_exit_event_observed": true,
+  "debug_elapsed_ms": 0.0,
+  "backend": {
+    "status": "failed",
+    "reason": "nonzero_exit",
+    "exit_code": 3221225794,
+    "metadata": {
+      "pid": 32492,
+      "is_appcontainer": true,
+      "is_lpac": true,
+      "capability_count": 0,
+      "integrity": 4096,
+      "job_limit_flags": 8972,
+      "child_restricted": true,
+      "start": "2026-10-24T00:43:07.571+08:00",
+      "end": "2026-10-24T00:43:07.642+08:00",
+      "wall_ms": 78.0,
+      "cpu_ms": 15.625,
+      "peak_job_memory_bytes": 430080,
+      "active_processes_after": 0,
+      "termination": "exited",
+      "loopback_exempt": false,
+      "job_events": [
+        6,
+        7,
+        4
+      ],
+      "startup_stage": "running",
+      "cleanup_complete": true,
+      "environment_keys": [
+        "APPDATA",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "LOCALAPPDATA",
+        "PUBLIC",
+        "PYTHONHOME",
+        "ProgramData",
+        "SystemDrive",
+        "SystemRoot",
+        "TEMP",
+        "TMP",
+        "USERPROFILE",
+        "windir"
+      ],
+      "lpac_class46_error": 87,
+      "lpac_verification_method": "accesscheck_aap_optout_v1",
+      "lpac_access_checks": {
+        "everyone_only": {
+          "api_ok": true,
+          "allowed": false,
+          "granted": 0,
+          "error": 5
+        },
+        "package_positive": {
+          "api_ok": true,
+          "allowed": true,
+          "granted": 3,
+          "error": 0
+        },
+        "aap_only": {
+          "api_ok": true,
+          "allowed": false,
+          "granted": 0,
+          "error": 5
+        },
+        "restricted_package_only": {
+          "api_ok": true,
+          "allowed": true,
+          "granted": 2,
+          "error": 0
+        },
+        "distinct_package_bits": {
+          "api_ok": true,
+          "allowed": true,
+          "granted": 2,
+          "error": 0
+        },
+        "empty_dacl": {
+          "api_ok": true,
+          "allowed": false,
+          "granted": 0,
+          "error": 5
+        }
+      },
+      "child_process_policy_flags": 1,
+      "win32k_disabled": true,
+      "system_call_disable_policy_flags": 5,
+      "job_active_process_limit": 1,
+      "job_process_memory_limit_bytes": 134217728,
+      "job_memory_limit_bytes": 134217728,
+      "job_cpu_user_time_limit_ms": 1000.0,
+      "job_cpu_rate_control_flags": 5,
+      "job_cpu_rate": 2000,
+      "appcontainer_sid_matches": true,
+      "process_exit_confirmed": true,
+      "cpu_user_ms": 15.625,
+      "cleanup_ms": 0.0
+    }
+  },
+  "stdout_bytes": 0,
+  "stderr_bytes": 0,
+  "native_source_sha256": "c5ce270339bc872839c9608ac0d4c21c6da8903735f8db810c499eb15269c948"
+}

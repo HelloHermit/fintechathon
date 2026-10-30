@@ -46,7 +46,7 @@ class FixedCandidateModel:
             "取消视频会员": {
                 "intent": "cancel_subscription", "params": {"subscription_id": "sub-video"},
             },
-            "创建依赖计划": {"steps": [
+            "先分析我本月账单，再查询我的订阅。": {"steps": [
                 {"id": "bill", "intent": "analyze_bills", "params": {}, "depends_on": []},
                 {"id": "subs", "intent": "query_subscriptions", "params": {}, "depends_on": ["bill"]},
             ]},
@@ -519,7 +519,7 @@ class WebAcceptanceTests(unittest.TestCase):
                 self.assertEqual(self.business_snapshot(), before)
 
     def test_plan_resume_and_interrupt_routes_preserve_confirmation_rules(self):
-        first = self.post("/api/message", {"text": "创建依赖计划"})
+        first = self.post("/api/message", {"text": "先分析我本月账单，再查询我的订阅。"})
         self.assertEqual(first.get("status"), "pending")
         self.assertTrue(first.get("plan_id"))
         repeated = self.post("/api/plan/resume", {"plan_id": first["plan_id"]})
@@ -531,7 +531,7 @@ class WebAcceptanceTests(unittest.TestCase):
         self.assertNotIn(stopped.get("status"), ("success", "pending"))
 
     def test_plan_takeover_stops_remaining_authorization(self):
-        first = self.post("/api/message", {"text": "创建依赖计划"})
+        first = self.post("/api/message", {"text": "先分析我本月账单，再查询我的订阅。"})
         self.assertEqual(first.get("status"), "pending")
         self.post("/api/plan/takeover", {"plan_id": first["plan_id"]})
         self.assertEqual(self.confirm(first).get("status"), "rejected")

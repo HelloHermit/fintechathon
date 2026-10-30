@@ -1,0 +1,20 @@
+{
+  "type": "implementation_development_failure_record_only",
+  "record_created_at": "2026-10-12T01:29:46.213763+08:00",
+  "ran": true,
+  "exit_code": 1,
+  "input": "新路径夹具使用Windows短路径临时目录，补充检查比较actual wrapper readable_directories与未resolve的期望路径。",
+  "expected": "目录比较应以相同解析后的规范路径判断。",
+  "actual": "第一个新增检查在readable_directories元组比较处AssertionError；wrapper profile目录已resolve，夹具期望profile_root仍含KINDHE~1短路径。前12项在同脚本该断言之前已完成，最终results.json尚未写入。",
+  "classification": "夹具路径比较前提不一致；不是业务路径guard放行。",
+  "fix": "在新的独立临时目录复制脚本，将run=Path(__file__).parent.resolve()规范化夹具根；未改业务期望，不复用已变化数据库。",
+  "failed_helper_path": "C:\\Users\\KINDHE~1\\AppData\\Local\\Temp\\fintech-isolation-integration-50bf5a21a1a044c489a1616bb7a48629\\development_checks.py",
+  "failed_helper_sha256": "184d4c132b781123e1300cab50cf3ec63378aae5910f6311605c8278970ef446",
+  "next_helper_path": "C:\\Users\\KindHermit\\AppData\\Local\\Temp\\fintech-isolation-integration-a2b6ee6e404344709daf10506a7ba387\\development_checks.py",
+  "real_model_calls": 0,
+  "normal_database_or_configuration_accessed": false,
+  "raw_database_delivered": false,
+  "independent_acceptance_claimed": false,
+  "system_isolation_claimed": false,
+  "time_exact_run_start_end_known": false
+}

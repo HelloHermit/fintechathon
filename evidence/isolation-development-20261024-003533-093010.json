@@ -1,0 +1,126 @@
+{
+  "scope": "Implementation-side minimal JSON launch; not independent acceptance",
+  "stamp": "20261024-003533-093010",
+  "error_reason": "nonzero_exit",
+  "receipt": {
+    "task_id": "3ee09a6607514c56a568a22d81809446",
+    "request_id": "",
+    "status": "failed",
+    "reason": "nonzero_exit",
+    "metadata": {
+      "pid": 35484,
+      "is_appcontainer": true,
+      "is_lpac": true,
+      "capability_count": 0,
+      "integrity": 4096,
+      "job_limit_flags": 8972,
+      "child_restricted": true,
+      "start": "2026-10-24T00:35:33.494+08:00",
+      "end": "2026-10-24T00:35:33.920+08:00",
+      "wall_ms": 421.0,
+      "cpu_ms": 15.625,
+      "peak_job_memory_bytes": 430080,
+      "active_processes_after": 0,
+      "termination": "exited",
+      "loopback_exempt": false,
+      "job_events": [
+        6,
+        7,
+        4
+      ],
+      "startup_stage": "running",
+      "cleanup_complete": true,
+      "environment_keys": [
+        "APPDATA",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "LOCALAPPDATA",
+        "PUBLIC",
+        "PYTHONHOME",
+        "ProgramData",
+        "SystemDrive",
+        "SystemRoot",
+        "TEMP",
+        "TMP",
+        "USERPROFILE",
+        "windir"
+      ],
+      "lpac_class46_error": 87,
+      "lpac_verification_method": "accesscheck_aap_optout_v1",
+      "lpac_access_checks": {
+        "everyone_only": {
+          "api_ok": true,
+          "allowed": false,
+          "granted": 0,
+          "error": 5
+        },
+        "package_positive": {
+          "api_ok": true,
+          "allowed": true,
+          "granted": 3,
+          "error": 0
+        },
+        "aap_only": {
+          "api_ok": true,
+          "allowed": false,
+          "granted": 0,
+          "error": 5
+        },
+        "restricted_package_only": {
+          "api_ok": true,
+          "allowed": true,
+          "granted": 2,
+          "error": 0
+        },
+        "distinct_package_bits": {
+          "api_ok": true,
+          "allowed": true,
+          "granted": 2,
+          "error": 0
+        },
+        "empty_dacl": {
+          "api_ok": true,
+          "allowed": false,
+          "granted": 0,
+          "error": 5
+        }
+      },
+      "win32k_disabled": true,
+      "cpu_user_ms": 15.625,
+      "cleanup_ms": 0.0,
+      "limits": {
+        "wall_seconds": 5.0,
+        "cpu_seconds": 1.0,
+        "cpu_rate_percent": 20,
+        "memory_bytes": 134217728,
+        "output_bytes": 65536,
+        "process_count": 1
+      },
+      "exit_code": 3221225794,
+      "output_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "audit_events": [
+    {
+      "id": 1,
+      "timestamp": "2026-10-24T00:35:33.345676+08:00",
+      "task_id": "3ee09a6607514c56a568a22d81809446",
+      "request_id": "",
+      "event": "started",
+      "status": "pending",
+      "reason": "ok",
+      "metadata_json": "{\"mechanism\": \"windows-lpac-job-v1\", \"limits\": {\"wall_seconds\": 5.0, \"cpu_seconds\": 1.0, \"cpu_rate_percent\": 20, \"memory_bytes\": 134217728, \"output_bytes\": 65536, \"process_count\": 1}, \"pid\": null, \"worker_started\": false, \"active_processes_after\": 0}"
+    },
+    {
+      "id": 2,
+      "timestamp": "2026-10-24T00:35:33.920848+08:00",
+      "task_id": "3ee09a6607514c56a568a22d81809446",
+      "request_id": "",
+      "event": "finished",
+      "status": "failed",
+      "reason": "nonzero_exit",
+      "metadata_json": "{\"pid\": 35484, \"is_appcontainer\": true, \"is_lpac\": true, \"capability_count\": 0, \"integrity\": 4096, \"job_limit_flags\": 8972, \"child_restricted\": true, \"start\": \"2026-10-24T00:35:33.494+08:00\", \"end\": \"2026-10-24T00:35:33.920+08:00\", \"wall_ms\": 421.0, \"cpu_ms\": 15.625, \"peak_job_memory_bytes\": 430080, \"active_processes_after\": 0, \"termination\": \"exited\", \"loopback_exempt\": false, \"job_events\": [6, 7, 4], \"startup_stage\": \"running\", \"cleanup_complete\": true, \"environment_keys\": [\"APPDATA\", \"HOMEDRIVE\", \"HOMEPATH\", \"LOCALAPPDATA\", \"PUBLIC\", \"PYTHONHOME\", \"ProgramData\", \"SystemDrive\", \"SystemRoot\", \"TEMP\", \"TMP\", \"USERPROFILE\", \"windir\"], \"lpac_class46_error\": 87, \"lpac_verification_method\": \"accesscheck_aap_optout_v1\", \"lpac_access_checks\": {\"everyone_only\": {\"api_ok\": true, \"allowed\": false, \"granted\": 0, \"error\": 5}, \"package_positive\": {\"api_ok\": true, \"allowed\": true, \"granted\": 3, \"error\": 0}, \"aap_only\": {\"api_ok\": true, \"allowed\": false, \"granted\": 0, \"error\": 5}, \"restricted_package_only\": {\"api_ok\": true, \"allowed\": true, \"granted\": 2, \"error\": 0}, \"distinct_package_bits\": {\"api_ok\": true, \"allowed\": true, \"granted\": 2, \"error\": 0}, \"empty_dacl\": {\"api_ok\": true, \"allowed\": false, \"granted\": 0, \"error\": 5}}, \"win32k_disabled\": true, \"cpu_user_ms\": 15.625, \"cleanup_ms\": 0.0, \"limits\": {\"wall_seconds\": 5.0, \"cpu_seconds\": 1.0, \"cpu_rate_percent\": 20, \"memory_bytes\": 134217728, \"output_bytes\": 65536, \"process_count\": 1}, \"exit_code\": 3221225794, \"output_bytes\": 0, \"stdout_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}"
+    }
+  ]
+}

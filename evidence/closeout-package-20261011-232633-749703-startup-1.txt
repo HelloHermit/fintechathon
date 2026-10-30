@@ -1,0 +1,6 @@
+启动模拟银行原型；已有数据库不会重置。
+模型未配置：需要服务商 API 基础地址、模型名和可用额度；密钥请仅在本机运行 scripts/configure-model.ps1 输入。
+当前自然语言请求将失败并留审计；固定命令及 /candidate 离线检查仍可用。
+当前模拟用户：alice；模拟数据库：C:\fintechathon\tests\.runs\unpacked-20261011-232633-749703\tests\.runs\documented-startup.db
+所有账户、联系人、资金和订阅操作都是模拟。输入 /help 查看命令。
+你> 会话已结束。模拟数据库已保留。

@@ -1,0 +1,79 @@
+{
+  "scope": "Implementation-side minimal JSON launch; not independent acceptance",
+  "stamp": "20261012-013517-119105",
+  "error_reason": "isolation_unavailable",
+  "receipt": {
+    "task_id": "b2783448ed894899a0b60ced34d66d59",
+    "request_id": "",
+    "status": "failed",
+    "reason": "isolation_unavailable",
+    "metadata": {
+      "pid": 22408,
+      "is_appcontainer": true,
+      "is_lpac": null,
+      "capability_count": null,
+      "integrity": null,
+      "job_limit_flags": null,
+      "child_restricted": null,
+      "start": "2026-10-12T01:35:17.261+08:00",
+      "end": "2026-10-12T01:35:17.353+08:00",
+      "wall_ms": 94.0,
+      "cpu_ms": 0.0,
+      "peak_job_memory_bytes": 380928,
+      "active_processes_after": 0,
+      "termination": "job_terminated",
+      "loopback_exempt": false,
+      "job_events": [],
+      "environment_keys": [
+        "APPDATA",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "LOCALAPPDATA",
+        "PUBLIC",
+        "PYTHONHOME",
+        "ProgramData",
+        "SystemDrive",
+        "SystemRoot",
+        "TEMP",
+        "TMP",
+        "USERPROFILE",
+        "windir"
+      ],
+      "win32_error": 87,
+      "cpu_user_ms": 0.0,
+      "limits": {
+        "wall_seconds": 5.0,
+        "cpu_seconds": 1.0,
+        "cpu_rate_percent": 20,
+        "memory_bytes": 134217728,
+        "output_bytes": 65536,
+        "process_count": 1
+      },
+      "exit_code": 1816,
+      "output_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "audit_events": [
+    {
+      "id": 1,
+      "timestamp": "2026-10-12T01:35:17.189463+08:00",
+      "task_id": "b2783448ed894899a0b60ced34d66d59",
+      "request_id": "",
+      "event": "started",
+      "status": "pending",
+      "reason": "ok",
+      "metadata_json": "{\"mechanism\": \"windows-lpac-job-v1\", \"limits\": {\"wall_seconds\": 5.0, \"cpu_seconds\": 1.0, \"cpu_rate_percent\": 20, \"memory_bytes\": 134217728, \"output_bytes\": 65536, \"process_count\": 1}}"
+    },
+    {
+      "id": 2,
+      "timestamp": "2026-10-12T01:35:17.354297+08:00",
+      "task_id": "b2783448ed894899a0b60ced34d66d59",
+      "request_id": "",
+      "event": "finished",
+      "status": "failed",
+      "reason": "isolation_unavailable",
+      "metadata_json": "{\"pid\": 22408, \"is_appcontainer\": true, \"is_lpac\": null, \"capability_count\": null, \"integrity\": null, \"job_limit_flags\": null, \"child_restricted\": null, \"start\": \"2026-10-12T01:35:17.261+08:00\", \"end\": \"2026-10-12T01:35:17.353+08:00\", \"wall_ms\": 94.0, \"cpu_ms\": 0.0, \"peak_job_memory_bytes\": 380928, \"active_processes_after\": 0, \"termination\": \"job_terminated\", \"loopback_exempt\": false, \"job_events\": [], \"environment_keys\": [\"APPDATA\", \"HOMEDRIVE\", \"HOMEPATH\", \"LOCALAPPDATA\", \"PUBLIC\", \"PYTHONHOME\", \"ProgramData\", \"SystemDrive\", \"SystemRoot\", \"TEMP\", \"TMP\", \"USERPROFILE\", \"windir\"], \"win32_error\": 87, \"cpu_user_ms\": 0.0, \"limits\": {\"wall_seconds\": 5.0, \"cpu_seconds\": 1.0, \"cpu_rate_percent\": 20, \"memory_bytes\": 134217728, \"output_bytes\": 65536, \"process_count\": 1}, \"exit_code\": 1816, \"output_bytes\": 0, \"stdout_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}"
+    }
+  ]
+}

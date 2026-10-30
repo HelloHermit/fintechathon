@@ -1,0 +1,10 @@
+{
+  "stamp": "20261012-013506-164938",
+  "scope": "Trusted fixed-worker synchronization only; no OS isolation pass",
+  "runtime": "C:\\fintechathon\\.isolation\\runtime-20261012",
+  "worker_sha256_before": "68cea31e0770c7e65413f6925c46f05b1f04a7bb4329adb381fb27d107db3b44",
+  "worker_sha256_after": "9a8ddcc6b680ad5e99859cb30748b97eff1663f76636214925ad0de721112a34",
+  "profile_unchanged": true,
+  "permissions_unchanged": true,
+  "limits_unchanged": true
+}

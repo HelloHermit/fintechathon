@@ -1,0 +1,163 @@
+{
+  "type": "implementation_development_report_only",
+  "record_created_at": "2026-10-12T01:18:47.068122+08:00",
+  "timezone": "Asia/Shanghai (+08:00)",
+  "run_time_exactly_known": false,
+  "time_evidence": {
+    "helper_file_last_modified_at": "2026-10-12T01:15:23.231578+08:00",
+    "results_file_last_modified_at": "2026-10-12T01:15:24.054932+08:00",
+    "note": "以上是文件时间证据，非测量的运行起止时间或耗时。"
+  },
+  "author_role": "业务隔离集成实现者；实现侧开发检查，不替代独立验收或OS隔离验证。",
+  "passed": 12,
+  "exit_code": 0,
+  "cases": [
+    {
+      "case": "valid transfer worker is called before any balance write",
+      "passed": true,
+      "input": "黄色转账10000分；执行器在确认后回传固定转账结果",
+      "expected": "worker运行时余额尚未修改；确认成功只记1笔",
+      "actual": "worker调用1次；余额990000/500000/110000分；transfers=1",
+      "ran": true,
+      "method": "模拟回调内SQLite余额查询；成功后余额与transfers计数"
+    },
+    {
+      "case": "worker timeout fails and appends failure without business write",
+      "passed": true,
+      "input": "余额查询worker抛timeout",
+      "expected": "failed/isolation_failed；业务余额不变；失败审计追加",
+      "actual": "状态及原因一致；余额1000000/500000/100000分；isolation_failed审计=1",
+      "ran": true,
+      "method": "公开propose响应与SQLite账户/审计查询"
+    },
+    {
+      "case": "monitor audit failure halts BankService as well",
+      "passed": true,
+      "input": "余额查询worker抛audit_unavailable",
+      "expected": "失败且BankService停机；后续请求不再执行worker",
+      "actual": "failed/isolation_failed；halted=True；后续audit_unavailable；worker共1次",
+      "ran": true,
+      "method": "公开propose与调用计数；SQLite余额/审计查询"
+    },
+    {
+      "case": "strict type comparison rejects worker boolean amount",
+      "passed": true,
+      "input": "worker把转账金额回传为布尔True",
+      "expected": "严格结果比对拒绝；不得转账",
+      "actual": "failed/isolation_failed/result_mismatch；余额未变；transfers=0",
+      "ran": true,
+      "method": "公开confirm响应；SQLite账户及转账计数"
+    },
+    {
+      "case": "late timeout returns expired and rolls back savepoint without clearing failures",
+      "passed": true,
+      "input": "黄色确认运行worker时测试时钟增加5分钟再timeout；原验证失败计数2",
+      "expected": "到期优先；保存点撤回confirmed及失败执行事件；失败计数保留",
+      "actual": "expired；余额未变；failures=2；confirmed/executed/isolation_failed计数0",
+      "ran": true,
+      "method": "固定带时区测试时钟；公开confirm与SQLite状态/审计查询"
+    },
+    {
+      "case": "business failure audit unavailable rolls back and halts",
+      "passed": true,
+      "input": "worker timeout同时业务isolation_failed审计钩子抛异常",
+      "expected": "事务回滚并停后续业务",
+      "actual": "audit_unavailable；halted=True；余额未变；requests=0",
+      "ran": true,
+      "method": "开发审计故障注入；公开响应及SQLite查询"
+    },
+    {
+      "case": "failed isolated predecessor stops DAG",
+      "passed": true,
+      "input": "两步依赖计划第一步余额查询worker timeout",
+      "expected": "失败后停止依赖后续步",
+      "actual": "步骤failed/not_started；worker共1次",
+      "ran": true,
+      "method": "公开propose计划回执与调用计数"
+    },
+    {
+      "case": "raw synthetic model JSON uses selected parser without host fallback",
+      "passed": true,
+      "input": "离线HTTP响应给出原始候选JSON；注入候选parser；宿主旧parser被设为抛异常",
+      "expected": "只使用指定候选parser；不回退宿主旧parser",
+      "actual": "候选返回query_balance；指定parser调用1次；无真实网络请求",
+      "ran": true,
+      "method": "离线opener替身与宿主旧parser故障注入"
+    },
+    {
+      "case": "isolated candidate parser monitor failure is audited and halts host business",
+      "passed": true,
+      "input": "候选parser抛audit_unavailable",
+      "expected": "BankService记录isolation_failed并停止执行",
+      "actual": "isolation_failed/audit_unavailable；halted=True；余额未变",
+      "ran": true,
+      "method": "离线模型响应替身；handle_text公开响应与SQLite查询"
+    },
+    {
+      "case": "CLI and Web executor startup failure precedes bank open",
+      "passed": true,
+      "input": "CLI/Web启用隔离但构造executor失败",
+      "expected": "业务BankService不得创建；安全退出且不降级",
+      "actual": "两入口exit=1；BankService替身未调用；业务目标文件不存在",
+      "ran": true,
+      "method": "构造失败注入与BankService调用保护；文件存在性查询"
+    },
+    {
+      "case": "direct BankService guards runtime and monitor paths before connect",
+      "passed": true,
+      "input": "直接BankService输入runtime内业务路径或monitor路径",
+      "expected": "connect/initialize前拒绝",
+      "actual": "两路径均ValueError；connect保护未触发；业务文件未创建",
+      "ran": true,
+      "method": "具有公开路径属性的模拟执行器；connect故障保护；文件查询"
+    },
+    {
+      "case": "direct BankService rejects existing monitor hardlink alias",
+      "passed": true,
+      "input": "直接BankService输入已有monitor文件的硬链接别名",
+      "expected": "samefile识别并在connect前拒绝",
+      "actual": "ValueError；connect保护未触发",
+      "ran": true,
+      "method": "仅临时合成标记文件及os.link；connect故障保护"
+    }
+  ],
+  "raw_results_relative_path": "evidence/isolation-integration-development-20261012-011847-results.json",
+  "raw_results_sha256": "38ff790ea92cb0712b4db6d01f7c3cb4a38775da5e20ce15dcd88c4708f2535b",
+  "prior_failure_relative_path": "evidence/isolation-integration-development-20261012-011847-fixture-reuse-failure.json",
+  "temporary_helper_path": "C:\\Users\\KindHermit\\AppData\\Local\\Temp\\fintech-isolation-integration-2fe8cf911a2141b9bb2394077b196650\\development_checks.py",
+  "temporary_helper_sha256": "82031d5bcd8fb2dc6d0da936f82f3e894b62c09764c5ac5894fde5970b762380",
+  "development_run_command": "& 'C:/Users/KindHermit/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe' 'C:/Users/KindHermit/AppData/Local/Temp/fintech-isolation-integration-2fe8cf911a2141b9bb2394077b196650/development_checks.py'",
+  "final_checks": {
+    "python_py_compile": {
+      "files": [
+        "src/bank.py",
+        "src/model.py",
+        "src/main.py",
+        "src/web.py"
+      ],
+      "exit_code": 0
+    },
+    "powershell_ParseFile": {
+      "file": "scripts/start.ps1",
+      "exit_code": 0
+    },
+    "git_diff_check": {
+      "exit_code": 0,
+      "note": "仅提示未来LF/CRLF转换，无空白错误。"
+    }
+  },
+  "source_sha256": {
+    "src/bank.py": "4621bd756c4deea61587ecbd7f23bdc77d3ca85fe251fd5020fc670f2fec9b91",
+    "src/model.py": "d84c68e9bfdd2e48c4f03685ff0f6e5cfb2ea4c6c145498c9457e848361eefec",
+    "src/main.py": "84c3148f08ea1a99d150dee02c69a532e66654f6c883228c2f4392aa26d25383",
+    "src/web.py": "dc58e679334d9bfa88d67a3b96102c12b63220a56c8e512828b33ac67fc61997",
+    "scripts/start.ps1": "2518c06cea6ab7937679b0628ffafdbae133dbeef1ea8211e3a28403ff4f4d6b"
+  },
+  "real_model_calls": 0,
+  "normal_database_or_configuration_accessed": false,
+  "raw_database_delivered": false,
+  "secret_or_effective_verification_code_recorded": false,
+  "system_isolation_claimed": false,
+  "independent_acceptance_claimed": false,
+  "limits": "compute_tool使用进程内开发替身，仅验证宿主顺序、失败事务、比对和停机逻辑；部分替身没有执行器路径属性，因此不构成OS隔离证明。路径保护检查另用公开属性替身。原始模型JSON来自离线HTTP响应替身。未做真实worker/受限账户/网络拒绝/真实模型/网页/真人验证；完整159项由根另行运行。"
+}

@@ -1,0 +1,18 @@
+{
+  "type": "implementation_development_failure_record_only",
+  "record_created_at": "2026-10-12T01:18:47.068122+08:00",
+  "run_time_exactly_known": false,
+  "time_evidence": "原运行results.json最后修改时间2026-10-12T01:12:13.8817756+08:00；复用失败发生在原10项成功后、换新目录复跑成功前。未单独保存失败起止时间。",
+  "input": "重新执行同一个临时目录中的development_checks.py，未恢复上一轮已完成转账的模拟数据库。",
+  "expected": "valid_transfer用例要求全新模拟账户初始余额；成功确认转账10000分。",
+  "actual": "exit 1；valid_transfer阶段AssertionError；上一轮成功转账已经改变临时数据库余额，worker回调内初始余额断言失败。原工具输出未另存，记录为当时观察的安全摘要，不伪造完整原始日志。",
+  "ran": true,
+  "classification": "开发夹具复用造成的前提不成立；未改用例期望、未把此失败覆盖成通过。",
+  "followup": "复制同一检查脚本到新独立临时目录，原10项通过；随后另一个新临时目录含新增路径保护检查，共12项通过。",
+  "temporary_run_directory": "C:\\Users\\KindHermit\\AppData\\Local\\Temp\\fintech-isolation-integration-e5418e7b5ef0470ea605d5876c8949f7",
+  "raw_database_delivered": false,
+  "real_model_calls": 0,
+  "normal_database_or_configuration_accessed": false,
+  "system_isolation_claimed": false,
+  "independent_acceptance_claimed": false
+}
