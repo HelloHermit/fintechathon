@@ -227,6 +227,16 @@ class Agent:
         asked = reply.rstrip().endswith(("？", "?"))
         self._remember(user_id, text, reply, note, keep_task=bool(pending or choice or asked or any(
             '"need_info"' in e or '"provenance"' in e for e in evidence)))
+        try:
+            with kernel.tx():
+                kernel.audit(user_id, "chat_turn", "none", "agent_turn", "success",
+                             f"工具：{'、'.join(n.split('→')[0] for n in tool_notes) or '无'}；事实校验：{fact}",
+                             actor="agent", turn_id=ctx.turn_id,
+                             params={"tools": tool_notes[:10], "pending": pending["request_id"] if pending else None,
+                                     "fact_check": fact})
+            trace.append(tools.step("audit", "本轮决策链已保存，审计已追加（哈希链）", "success"))
+        except Exception:
+            trace.append(tools.step("audit", "审计写入失败：本轮只返回查询结果", "failed"))
         if plan and any(b["type"] == "plan" for b in blocks):
             blocks = [b for b in blocks if b["type"] != "plan"]  # 计划放在 TurnResponse.plan，避免重复
         return self.response(ctx.turn_id, reply, blocks, pending=pending, plan=plan, trace=trace, fact_check=fact,
@@ -523,6 +533,10 @@ def block_summary(block):
         return f"你有 {len(d['items'])} 笔理财持仓，累计收益 {yuan(sum(i['profit_cents'] for i in d['items']))}。"
     if t == "risk_questionnaire":
         return "请先完成下方 6 道风险测评题。"
+    if t == "code_analysis":
+        if d["status"] != "ok":
+            return f"分析代码没有通过沙箱检查（{d.get('reason', '')}），没有运行。"
+        return "分析结果见下方卡片（代码在受限沙箱中运行，结果来自你的流水）。"
     return None
 
 

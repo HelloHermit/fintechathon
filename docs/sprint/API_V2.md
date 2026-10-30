@@ -270,3 +270,8 @@ PlanSummary = 只含 `plan_id,title,status,created_at,node_count,done_count`。
 - 聊天里也能控制计划：“先别订蛋糕了”（确认前：返回新的整体确认单，旧单作废；确认后：只取消那一步）、“全部取消”、“暂停”、“继续”、“转人工”。
 - `Plan` 多带 `budget_id`；节点 `status` 新增可能值 `skipped`（用户去掉的步骤）。计划结束时剩余预算自动释放，并发一条 `settlement` 通知。
 - `POST /api/v2/demo/advance-clock`：快进时**逐个事件推进**，每个到期任务按它自己的计划时间执行（例如快进到 11-10，11-01 的房租仍记在 11-01）。返回的 `executed` 只含当前演示身份的通知，按时间先后排序。
+
+### 5.4 2026-10-30 · v2.0.4（A9 审计、A10 沙箱）
+
+- `code_analysis` 卡片：`{question, code, engine: "subprocess+netns" | "subprocess" | "docker", limits: {timeout_s, cpu_s, memory_mb, network: false | "未隔离（降级）"}, duration_ms, status: ok|rejected|error, reason?, result: {type: value|table|series, value}}`。`engine="subprocess+netns"` 表示子进程 + 无网络的网络命名空间（Linux 支持时自动启用）；`rejected` 表示代码没通过运行前检查、从未运行。
+- 每轮聊天在审计里追加一条 `event="agent_turn"`（用了哪些工具、事实校验结果）；沙箱运行追加 `event="sandbox_run"`（代码哈希、引擎、耗时、退出状态）。TurnResponse.trace 最后一步是 `kind:"audit"`。

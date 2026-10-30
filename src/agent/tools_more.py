@@ -468,3 +468,37 @@ def list_plans(ctx):
     blocks = [{"type": "plan", "data": ctx.kernel.ops.plan_view(ctx.user_id, i["plan_id"])} for i in items[:3]]
     return ToolOutcome({"plans": [{"title": i["title"], "status": i["status"], "progress": f"{i['done_count']}/{i['node_count']}"} for i in items]},
                        blocks=blocks)
+
+
+# ---------------------------------------------------------------------------------------------- 沙箱分析
+from ..core import sandbox  # noqa: E402
+
+
+@tool("run_analysis", "固定报表回答不了的长尾分析（如“周末和工作日外卖平均各花多少”“哪个月打车最多”）：你写一段 Python，"
+      "系统在受限沙箱里运行。代码必须定义 def analyze(transactions)，返回可 JSON 序列化的结果（dict/list/数字）。"
+      "transactions 是本人近 13 个月交易列表，每项字段：time(ISO), date(YYYY-MM-DD), weekday(0=周一…6=周日), hour, merchant, category, "
+      "amount(元，支出为负), amount_cents。只能 from math/statistics/collections/datetime/itertools import …；不能读写文件、联网。",
+      {"question": {"type": "string", "description": "用户的问题"}, "code": {"type": "string", "description": "Python 代码，≤2000 字符"}},
+      ["question", "code"])
+def run_analysis(ctx, question="", code=""):
+    data = sandbox.snapshot(ctx.kernel, ctx.user_id)
+    result = sandbox.run(code, data)
+    block = {"type": "code_analysis", "data": {"question": question[:100], "code": code[:2000], "engine": result["engine"],
+                                                "limits": result["limits"], "duration_ms": result["duration_ms"],
+                                                "status": result["status"], "result": result["result"],
+                                                **({"reason": result["reason"]} if result.get("reason") else {})}}
+    with ctx.kernel.tx():
+        ctx.kernel.audit(ctx.user_id, "run_analysis", "green", "sandbox_run", result["status"], (result.get("reason") or "运行完成")[:100],
+                         actor="agent", turn_id=ctx.turn_id,
+                         params={"code_hash": result["code_hash"], "engine": result["engine"], "duration_ms": result["duration_ms"],
+                                 "exit": result.get("exit"), "limits": result["limits"]})
+    label = {"ok": "success", "rejected": "blocked", "error": "failed"}[result["status"]]
+    trace = [step("tool", f"沙箱分析（{result['engine']}）：AST 白名单{'通过' if result['status'] != 'rejected' else '拒绝：' + result['reason']}；"
+                          f"{result['duration_ms']} 毫秒", label, {"code_hash": result["code_hash"][:16], "engine": result["engine"]})]
+    first = data[0]["date"] if data else ""
+    model_result = {"status": result["status"], "result": result["result"],
+                    "data_range": f"近 13 个月（{first} 至 {ctx.now:%Y-%m-%d}，共 {len(data)} 笔）"}
+    if result.get("reason"):
+        model_result["reason"] = result["reason"]
+        model_result["note"] = "可以修正代码后再调用一次。"
+    return ToolOutcome(model_result, blocks=[block], trace=trace)

@@ -211,3 +211,26 @@ class PlanTests(unittest.TestCase):
         self.assertIsNone(resp["error"])
         self.assertEqual(resp["plan"]["status"], "handed_over")
         self.assertTrue(self.k.db.execute("SELECT 1 FROM handovers WHERE plan_id=?", (self.plan_id,)).fetchone())
+
+
+class SandboxTests(unittest.TestCase):
+    def test_good_code_runs_and_bad_code_is_rejected(self):
+        from src.core import sandbox
+        k, _ = new_kernel()
+        data = sandbox.snapshot(k, "alice")
+        ok = sandbox.run("from statistics import mean\ndef analyze(transactions):\n    return {'n': len(transactions)}", data)
+        self.assertEqual(ok["status"], "ok")
+        self.assertEqual(ok["result"]["value"]["n"], len(data))
+        for bad in ["import os\ndef analyze(t): return 1", "def analyze(t): return open('/etc/passwd').read()",
+                    "def analyze(t): return ().__class__.__bases__", "from socket import socket\ndef analyze(t): return 1",
+                    "def analyze(t): return eval('1')", "x = 1"]:
+            self.assertEqual(sandbox.run(bad, data)["status"], "rejected", bad)
+        loop = sandbox.run("def analyze(t):\n    while True:\n        pass", data)
+        self.assertEqual(loop["status"], "error")
+
+    def test_tool_audits_code_hash(self):
+        k, _ = new_kernel()
+        out = tool(k, "run_analysis", "统计笔数", question="统计笔数", code="def analyze(transactions):\n    return len(transactions)")
+        self.assertEqual(out.blocks[0]["data"]["status"], "ok")
+        row = k.db.execute("SELECT params_redacted FROM audit WHERE event='sandbox_run'").fetchone()
+        self.assertIn("code_hash", row[0])
