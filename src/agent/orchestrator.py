@@ -244,6 +244,10 @@ class Agent:
                     kernel.audit(user_id, "fact_check", "none", "fact_check", "corrected", "；".join(problems[:3]),
                                  actor="agent", turn_id=ctx.turn_id)
             reply = self._template_reply(pending, choice, blocks)
+            waiting = [p for p in kernel.open_pendings(user_id) if not pending or p["request_id"] != pending["request_id"]]
+            if not pending and not choice and waiting:
+                how = "点确认" if waiting[-1]["tier"] == "yellow" else "完成交易密码 + 动态码验证"
+                reply = f"还没有执行：“{waiting[-1]['title']}”还在等你{how}。" + ("" if reply.startswith("这个问题需要先查数据") else reply)
         else:
             trace.append(tools.step("fact_check", "事实校验：回复中的数字均来自工具结果", "pass"))
         if pending is None and choice is None and not any(b["type"] == "note" for b in blocks):

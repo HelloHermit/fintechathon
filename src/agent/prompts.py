@@ -28,6 +28,7 @@ def build_system(user_name, now, pendings):
         for index, p in enumerate(pendings, 1):
             amount = next((l["value"] for l in p["lines"] if l["label"] == "金额"), "")
             lines.append(f"- P{index}：{p['title']} {amount}（{'黄档，等用户点确认' if p['tier'] == 'yellow' else '红档，等用户强验证'}）")
+        lines.append("这些单子都还没有执行。用户问“转好了吗/办好了吗”时，如实说还没执行、在等他确认，不要调用查询工具去找结果。")
         lines.append("用户要求修改金额等参数时，重新调用相应工具生成新单（旧单会自动作废）；要求取消时调用 cancel_pending。")
         pending_section = "\n".join(lines)
     else:
