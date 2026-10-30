@@ -163,3 +163,51 @@ class TransferExtrasTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PlanTests(unittest.TestCase):
+    def setUp(self):
+        from src.agent.orchestrator import Agent
+        from tests.test_v2_engine import FakeLLM
+        self.k, _ = new_kernel()
+        self.agent = Agent(self.k, FakeLLM([]))
+        resp = self.agent.action("alice", "insight_accept", "ins-birthday-c-spouse", None)
+        self.pending, self.plan_id = resp["pending"], resp["plan"]["plan_id"]
+
+    def balances(self):
+        return tuple(self.k.db.execute("SELECT balance_cents, reserved_cents FROM accounts WHERE account_id='alice-main'").fetchone())
+
+    def test_one_confirmation_runs_whole_plan(self):
+        self.assertEqual(self.pending["tier"], "yellow")
+        self.assertEqual(len(self.pending["lines"]), 5)
+        self.agent.kernel_call("alice", self.k.confirm, self.pending["request_id"], self.pending["confirmation_code"])
+        self.assertEqual(self.balances(), (2658000, 100000))
+        self.k.advance_clock(to="2026-11-12T09:00:00+08:00")
+        plan = self.k.ops.plan_view("alice", self.plan_id)
+        self.assertEqual(plan["status"], "completed")
+        self.assertEqual([n["status"] for n in plan["nodes"]], ["success"] * 4)
+        orders = self.k.db.execute("SELECT service_id, amount_cents, shanghai_date FROM orders ORDER BY service_id").fetchall()
+        self.assertEqual([tuple(o) for o in orders], [("cake-basic", 9900, "2026-11-10"), ("flower-basic", 12900, "2026-11-10")])
+        self.assertEqual(self.balances()[1], 0)  # 剩余预算已释放
+
+    def test_cancel_node_and_rollback(self):
+        from src.core import plans
+        self.agent.kernel_call("alice", self.k.confirm, self.pending["request_id"], self.pending["confirmation_code"])
+        plans.control(self.k, "alice", self.plan_id, "cancel_node", ["蛋糕"])
+        resp = self.agent.plan_control("alice", self.plan_id, "rollback")
+        self.assertEqual(resp["plan"]["status"], "rolled_back")
+        self.assertEqual(self.balances(), (2658000, 0))
+        self.k.advance_clock(to="2026-11-11T09:00:00+08:00")
+        self.assertEqual(self.k.db.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 0)
+
+    def test_pause_blocks_execution_and_takeover(self):
+        self.agent.kernel_call("alice", self.k.confirm, self.pending["request_id"], self.pending["confirmation_code"])
+        self.agent.plan_control("alice", self.plan_id, "pause")
+        self.k.advance_clock(to="2026-11-10T10:00:00+08:00")
+        self.assertEqual(self.k.db.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 0)
+        self.agent.plan_control("alice", self.plan_id, "resume")
+        self.assertEqual(self.k.db.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 2)
+        resp = self.agent.plan_control("alice", self.plan_id, "takeover")  # 提醒节点还没到，计划未结束，可以转人工
+        self.assertIsNone(resp["error"])
+        self.assertEqual(resp["plan"]["status"], "handed_over")
+        self.assertTrue(self.k.db.execute("SELECT 1 FROM handovers WHERE plan_id=?", (self.plan_id,)).fetchone())

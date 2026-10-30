@@ -261,3 +261,12 @@ PlanSummary = 只含 `plan_id,title,status,created_at,node_count,done_count`。
 - **环比口径统一为“上月同期”**：`spending_breakdown.compare` 和月报 KPI 的“环比”都比较“本月 1 日至今”与“上月 1 日至同一天”；过去的完整月份就是上月全月。月报 KPI 的 `delta` 文字写成“+59.8% 环比（上月同期）”。
 - **事实校验纠正后的回复**改为根据本轮卡片生成的一句话（例如“这段时间总支出 ¥16,575.71，最多的是购物 ¥7,346.00。”）；本轮没有任何工具结果时，回复“需要先查数据……不展示没有核实过的数字”，不再换成无关的能力介绍。另外：模型没调用工具就给出事实数字时，会被要求先调用工具再回答一次（决策链里有一条 `fact_check: warned`）。
 - `Report.period` 是对象 `{"from","to","label"}`。
+
+### 5.3 2026-10-30 · v2.0.3（A8 计划引擎）
+
+- `POST /api/v2/action` `{"type":"insight_accept","ref":"ins-birthday-c-spouse"}` → TurnResponse：`plan`（状态 `awaiting_confirmation`，4 个节点）+ `pending`（`intent:"plan"`，`plan_id` 有值，一次确认整个计划；节点里有红档时 `kind=strong_auth`）。`ins-renewal` → 订阅查询的黄档单；`ins-anomaly` → `anomaly_list`；`ins-rent-*` → `scheduled_list`。
+- 计划确认成功的回执 TurnResponse 里 `plan` 是最新状态（`running`），`assistant.blocks` 里还有一个 `plan` 卡片。
+- `POST /api/v2/plan/control` 返回 TurnResponse，`plan` 为最新状态；`assistant.text` 说明做了什么（例如“计划已回退：取消了 2 个未执行步骤，释放预算 ¥1,000.00。”）。`pause` 后到点的节点不执行；`resume` 后会马上补执行（执行前同样复查）；`takeover` 生成人工工单并停止自动执行。
+- 聊天里也能控制计划：“先别订蛋糕了”（确认前：返回新的整体确认单，旧单作废；确认后：只取消那一步）、“全部取消”、“暂停”、“继续”、“转人工”。
+- `Plan` 多带 `budget_id`；节点 `status` 新增可能值 `skipped`（用户去掉的步骤）。计划结束时剩余预算自动释放，并发一条 `settlement` 通知。
+- `POST /api/v2/demo/advance-clock`：快进时**逐个事件推进**，每个到期任务按它自己的计划时间执行（例如快进到 11-10，11-01 的房租仍记在 11-01）。返回的 `executed` 只含当前演示身份的通知，按时间先后排序。

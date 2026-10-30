@@ -327,11 +327,29 @@ class Operations:
                           f"{sender} 向你转账 {yuan(tr['amount_cents'])}" + (f"，备注“{tr['memo']}”" if tr["memo"] else ""))
 
     # ------------------------------------------------------------------ 调度器
+    def next_event_time(self, after, until):
+        """(after, until] 之间最早的一个到期事件时间；没有则 None。"""
+        candidates = []
+        row = self.db.execute("""SELECT MIN(run_at) FROM schedules WHERE status='scheduled' AND run_at>? AND run_at<=? AND (plan_id IS NULL OR
+            plan_id NOT IN (SELECT plan_id FROM plans WHERE status IN ('paused','handed_over')))""", (iso(after), iso(until))).fetchone()
+        if row[0]:
+            candidates.append(parse_iso(row[0]))
+        row = self.db.execute("SELECT MIN(arrive_at) FROM transfers WHERE status='in_transit' AND arrive_at>? AND arrive_at<=?",
+                              (iso(after), iso(until))).fetchone()
+        if row[0]:
+            candidates.append(parse_iso(row[0]))
+        for sub in self.db.execute("SELECT next_charge_date FROM subscriptions WHERE status='active' AND next_charge_date IS NOT NULL"):
+            when = datetime.fromisoformat(sub[0]).replace(hour=6, minute=30, tzinfo=SHANGHAI)
+            if after < when <= until:
+                candidates.append(when)
+        return min(candidates) if candidates else None
+
     def run_due(self):
         produced = []
         now = self.k.now()
         for _ in range(200):  # 防止异常数据导致死循环
-            due = self.db.execute("SELECT * FROM schedules WHERE status='scheduled' AND run_at<=? ORDER BY run_at LIMIT 1",
+            due = self.db.execute("""SELECT * FROM schedules WHERE status='scheduled' AND run_at<=? AND (plan_id IS NULL OR
+                plan_id NOT IN (SELECT plan_id FROM plans WHERE status IN ('paused','handed_over'))) ORDER BY run_at LIMIT 1""",
                                   (iso(now),)).fetchone()
             if due is None:
                 break

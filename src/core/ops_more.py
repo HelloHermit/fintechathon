@@ -289,5 +289,6 @@ def register_all(ops):
     ops.tick_hooks = []
     for cls in (MoveFundsHandler, RevokeTransferHandler, AACollectHandler, AAPayHandler, CancelScheduledHandler):
         ops.register(cls(ops))
-    from . import ops_cards
+    from . import ops_cards, plans
     ops_cards.register(ops)
+    plans.register(ops)

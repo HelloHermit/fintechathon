@@ -31,7 +31,8 @@ def tool(name, description, properties=None, required=None, write=False):
 
 
 class ToolOutcome:
-    def __init__(self, model_result=None, blocks=None, pending=None, trace=None, choice=None, receipt=None):
+    def __init__(self, model_result=None, blocks=None, pending=None, trace=None, choice=None, receipt=None, plan=None):
+        self.plan = plan
         self.model_result = model_result or {}
         self.blocks = blocks or []
         self.pending = pending
@@ -370,7 +371,8 @@ def cancel_pending(ctx, ref=None):
         if m and 1 <= int(m.group(1)) <= len(rows):
             target = rows[int(m.group(1)) - 1]
     result = ctx.kernel.cancel(ctx.user_id, target["request_id"], ctx.turn_id)
-    return ToolOutcome({"status": "cancelled", "title": result["title"]},
+    extra = {"note": "这张单还没确认，没有执行过任何操作，也没有锁定或扣过钱"}
+    return ToolOutcome({"status": "cancelled", "title": result["title"], **extra},
                        blocks=[{"type": "note", "data": {"text": f"已取消：{result['title']}", "tone": "info"}}],
                        trace=[step("tool", f"取消待确认单：{result['title']}", "success")])
 

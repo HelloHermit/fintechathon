@@ -384,3 +384,87 @@ def cancel_scheduled(ctx, keyword="", schedule_id=None):
         raise NeedChoice("要取消哪一个定时任务？", "schedule_id", [{"label": f"{r['title']} {yuan(r['amount_cents'])}", "value": r["schedule_id"],
                                                                   "hint": r["run_at"][:10]} for r in rows])
     return _propose(ctx, "cancel_scheduled", {"schedule_id": rows[0]["schedule_id"]}, [])
+
+
+# ---------------------------------------------------------------------------------------------- 计划（跨场景联动）
+from ..core import plans as plan_engine  # noqa: E402
+from . import resolvers  # noqa: E402
+
+
+@tool("create_plan", "为家人朋友的生日生成筹备计划：锁定预算 → 生日前 2 天订鲜花和蛋糕 → 当天提醒；用户一次确认整个计划。"
+      "用于“我老婆下个月12号生日，帮我准备一下”。",
+      {"person": {"type": "string", "description": "用户说的人（称呼或姓名，如“老婆”“妈妈”）"},
+       "date": {"type": "string", "description": "用户说的生日日期原话；没说就不填（用联系人登记的生日）"},
+       "budget": {"type": "number", "description": "用户说的预算（元）；没说不填，默认 1000"}}, ["person"], write=True)
+def create_plan(ctx, person="", date=None, budget=None):
+    trace = []
+    if not person or not ctx.mentions(person):
+        raise RuleError("provenance", "要给谁准备？请告诉我对方的称呼或名字。")
+    matches = [m for m in resolvers.contact_matches(ctx.kernel, ctx.user_id, person) if m["is_contact"]]
+    if len(matches) != 1:
+        raise RuleError("not_found", f"联系人里没有找到唯一的“{person}”。")
+    contact = matches[0]
+    trace.append(provenance_step("对象", True, f"用户原话“{person}” → {contact['display']}"))
+    event = None
+    if date:
+        value, note = resolvers.resolve_date(date, ctx.now)
+        if value is None or value.date().isoformat() not in resolvers.scan_dates(ctx.texts, ctx.now):
+            raise RuleError("provenance", "生日日期请以你说的为准，能再说一下是哪天吗？")
+        event = value
+        trace.append(provenance_step("日期", True, f"用户原话“{date}” → {value:%Y-%m-%d}"))
+    cents = 100000
+    if budget is not None:
+        cents = _check_amount(ctx, budget, trace, field="预算")
+    plan = plan_engine.create_birthday_plan(ctx.kernel, ctx.user_id, contact["contact_id"], event, cents, source="chat")
+    trace.append(step("plan", f"计划模板：生日筹备（{len(plan['nodes'])} 个节点，依赖关系 n1→n2/n3→n4）", "pass"))
+    result = ctx.kernel.propose(ctx.user_id, "plan", {"plan_id": plan["plan_id"]}, turn_id=ctx.turn_id, plan_id=plan["plan_id"],
+                                provenance={"person": "user_text", "date": "user_text" if date else "联系人登记的生日"})
+    trace.append(step("tier", result["tier_reason"], "pending"))
+    out = ToolOutcome(dict(pending_for_model(result["pending"]), plan_nodes=[n["title"] for n in plan["nodes"]]),
+                      blocks=[{"type": "plan", "data": plan_engine.view(plan_engine.load(ctx.kernel, ctx.user_id, plan["plan_id"]))}],
+                      pending=result["pending"], trace=trace)
+    out.plan = plan_engine.view(plan_engine.load(ctx.kernel, ctx.user_id, plan["plan_id"]))
+    return out
+
+
+def _active_plan(ctx):
+    row = ctx.kernel.db.execute("""SELECT plan_id FROM plans WHERE user_id=? AND status IN ('running','paused','awaiting_confirmation','failed')
+        ORDER BY created_at DESC LIMIT 1""", (ctx.user_id,)).fetchone()
+    if row is None:
+        raise RuleError("not_found", "你现在没有进行中的计划。")
+    return row[0]
+
+
+@tool("plan_control", "控制进行中的计划：pause=暂停、resume=继续、rollback=全部取消并回退（释放预算）、takeover=转人工、"
+      "cancel_node=只取消其中一步（如“先别订蛋糕了”，node 填“蛋糕”）。",
+      {"action": {"type": "string", "enum": ["pause", "resume", "rollback", "takeover", "cancel_node"]},
+       "node": {"type": "string", "description": "cancel_node 时用户说的那一步，如“蛋糕”“鲜花”"}}, ["action"])
+def plan_control(ctx, action="", node=None):
+    plan_id = _active_plan(ctx)
+    hint = None
+    if action == "cancel_node":
+        hint = [w for w in ("蛋糕", "鲜花", "花") if w in ctx.current or (node and w in node and ctx.mentions(w))]
+        if not hint:
+            raise RuleError("need_info", "要取消计划里的哪一步？鲜花还是蛋糕？")
+    plan, note = plan_engine.control(ctx.kernel, ctx.user_id, plan_id, action, hint, ctx.turn_id, actor="user")
+    if plan["status"] == "awaiting_confirmation":
+        # 确认前修改计划：旧确认单作废，按新节点重新生成一张整体确认单
+        result = ctx.kernel.propose(ctx.user_id, "plan", {"plan_id": plan_id}, turn_id=ctx.turn_id, plan_id=plan_id,
+                                    provenance={"change": "用户要求去掉一步"})
+        out = ToolOutcome(dict(pending_for_model(result["pending"]), message=note),
+                          pending=result["pending"], trace=[step("plan", note, "success"), step("tier", result["tier_reason"], "pending")])
+        out.plan = plan_engine.view(plan_engine.load(ctx.kernel, ctx.user_id, plan_id))
+        return out
+    out = ToolOutcome({"status": "done", "plan_status": plan["status"], "message": note},
+                      blocks=[{"type": "plan", "data": plan_engine.view(plan)}, {"type": "note", "data": {"text": note, "tone": "info"}}],
+                      trace=[step("plan", f"计划控制：{action} → {plan['status']}", "success")])
+    out.plan = plan_engine.view(plan)
+    return out
+
+
+@tool("list_plans", "查看我的计划及进度。")
+def list_plans(ctx):
+    items = ctx.kernel.ops.plan_summaries(ctx.user_id)
+    blocks = [{"type": "plan", "data": ctx.kernel.ops.plan_view(ctx.user_id, i["plan_id"])} for i in items[:3]]
+    return ToolOutcome({"plans": [{"title": i["title"], "status": i["status"], "progress": f"{i['done_count']}/{i['node_count']}"} for i in items]},
+                       blocks=blocks)

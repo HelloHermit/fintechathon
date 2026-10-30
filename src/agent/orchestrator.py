@@ -134,6 +134,7 @@ class Agent:
         messages = [{"role": "system", "content": system}] + self._mem(user_id)["history"] + [{"role": "user", "content": text}]
         specs = tools.tool_specs()
         blocks, evidence, pending, choice, receipts, tool_notes = [], [text], None, None, [], []
+        plan = None
         cancelled = False
         nudged = False
         reply = ""
@@ -190,6 +191,8 @@ class Agent:
                     pending = outcome.pending
                 if outcome.choice:
                     choice = outcome.choice
+                if outcome.plan:
+                    plan = outcome.plan
                 if outcome.receipt:
                     receipts.append(outcome.receipt)
                 if outcome.model_result.get("status") == "cancelled":
@@ -224,7 +227,9 @@ class Agent:
         asked = reply.rstrip().endswith(("？", "?"))
         self._remember(user_id, text, reply, note, keep_task=bool(pending or choice or asked or any(
             '"need_info"' in e or '"provenance"' in e for e in evidence)))
-        return self.response(ctx.turn_id, reply, blocks, pending=pending, trace=trace, fact_check=fact,
+        if plan and any(b["type"] == "plan" for b in blocks):
+            blocks = [b for b in blocks if b["type"] != "plan"]  # 计划放在 TurnResponse.plan，避免重复
+        return self.response(ctx.turn_id, reply, blocks, pending=pending, plan=plan, trace=trace, fact_check=fact,
                              suggestions=self._suggest(blocks, pending), user_id=user_id)
 
     def _template_reply(self, pending, choice, blocks):
@@ -390,6 +395,44 @@ class Agent:
         trace = [tools.step("resolver", "问卷计分由代码完成：6 题各 1–5 分", "pass"), tools.step("tier", result["tier_reason"], "pending")]
         return self._finish(user_id, turn_id, "[问卷]", self.response(turn_id, "测评结果已算好，请核对后点确认提交。", pending=result["pending"],
                                                                       trace=trace, user_id=user_id))
+
+    def _accept_birthday(self, user_id, ref):
+        from ..core import plans as plan_engine
+        turn_id = new_id("t")
+        contact_id = ref[len("ins-birthday-"):]
+        trace = [tools.step("guard", "用户点击首页提醒“帮我准备”（不经过模型）", "pass")]
+        existing = self.kernel.db.execute("""SELECT plan_id FROM plans WHERE user_id=? AND status IN ('running','paused')
+            AND plan_json LIKE ?""", (user_id, '%"contact_id":"' + contact_id + '"%')).fetchone()
+        if existing:
+            plan = plan_engine.view(plan_engine.load(self.kernel, user_id, existing[0]))
+            return self.response(turn_id, "这个生日计划已经在进行中了，进度见下方。", plan=plan, trace=trace, user_id=user_id)
+        try:
+            created = plan_engine.create_birthday_plan(self.kernel, user_id, contact_id, source="insight")
+            result = self.kernel.propose(user_id, "plan", {"plan_id": created["plan_id"]}, turn_id=turn_id, plan_id=created["plan_id"],
+                                         actor="user", provenance={"source": "用户点击首页生日提醒"})
+        except RuleError as error:
+            return self.response(turn_id, error.message, [{"type": "note", "data": {"text": error.message, "tone": "warning"}}],
+                                 trace=trace, user_id=user_id)
+        trace += [tools.step("plan", f"计划模板：生日筹备（{len(created['nodes'])} 个节点：锁预算 → 订花、订蛋糕 → 当天提醒）", "pass"),
+                  tools.step("tier", result["tier_reason"], "pending")]
+        plan = plan_engine.view(plan_engine.load(self.kernel, user_id, created["plan_id"]))
+        text = f"已为你生成“{created['title']}”计划，共 {len(created['nodes'])} 步。核对后点一次确认，整个计划就会按时自动执行。"
+        return self._finish(user_id, turn_id, "[生日提醒]", self.response(turn_id, text, pending=result["pending"], plan=plan,
+                                                                        trace=trace, user_id=user_id))
+
+    def _plan_control(self, user_id, plan_id, action):
+        from ..core import plans as plan_engine
+        turn_id = new_id("t")
+        try:
+            plan, note = plan_engine.control(self.kernel, user_id, plan_id, action, turn_id=turn_id)
+        except RuleError as error:
+            return self.response(turn_id, error.message, error={"code": "expired" if error.code == "not_found" else "invalid_request",
+                                                                 "message": error.message}, user_id=user_id)
+        trace = [tools.step("plan", f"计划控制（页面按钮）：{action} → {plan['status']}", "success"),
+                 tools.step("audit", "已写入审计", "success")]
+        self.kernel.tick()
+        plan = plan_engine.view(plan_engine.load(self.kernel, user_id, plan_id))
+        return self._finish(user_id, turn_id, "[计划控制]", self.response(turn_id, note, plan=plan, trace=trace, user_id=user_id))
 
     def _action_insight_accept(self, user_id, ref, value):
         kind = ref.split("-")[1] if ref.startswith("ins-") else ""

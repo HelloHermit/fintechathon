@@ -121,13 +121,25 @@ class Kernel:
                 if type(minutes) is not int or not 0 < minutes <= 60 * 24 * 60:
                     raise RuleError("invalid_request", "快进分钟数需在 1 到 86400 之间。")
                 target = current + timedelta(minutes=minutes)
+            executed = []
+            # 逐个事件推进：每个到期任务都在它自己的计划时间执行（例如 11-01 的房租不会被算到 11-10）
+            for _ in range(500):
+                nxt = self.ops.next_event_time(self.now(), target)
+                if nxt is None:
+                    break
+                self._set_clock(nxt)
+                executed.extend(self.tick())
+            self._set_clock(target)
             with self.tx():
-                self.db.execute("UPDATE meta SET value=? WHERE key='clock_anchor_sim'", (iso(target),))
-                self.db.execute("UPDATE meta SET value=? WHERE key='clock_anchor_real'", (repr(self.real_clock()),))
                 self.audit("system", "demo_clock", "none", "advance_clock", "success",
                            f"模拟时间 {iso(current)} → {iso(target)}", actor="system")
-            executed = self.tick()
+            executed.extend(self.tick())
             return {"now": iso(self.now()), "executed": executed}
+
+    def _set_clock(self, when):
+        with self.tx():
+            self.db.execute("UPDATE meta SET value=? WHERE key='clock_anchor_sim'", (iso(when),))
+            self.db.execute("UPDATE meta SET value=? WHERE key='clock_anchor_real'", (repr(self.real_clock()),))
 
     @contextmanager
     def tx(self):

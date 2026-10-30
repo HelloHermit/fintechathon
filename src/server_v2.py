@@ -339,6 +339,7 @@ class Handler(BaseHTTPRequestHandler):
             if not app.demo:
                 return self._error(403, "forbidden", "演示接口未开启。")
             if route == "demo/advance-clock":
+                before = iso(k.now())
                 try:
                     if set(body) == {"minutes"} and type(body["minutes"]) is int:
                         result = k.advance_clock(minutes=body["minutes"])
@@ -348,6 +349,8 @@ class Handler(BaseHTTPRequestHandler):
                         raise ValueError("fields")
                 except RuleError as error:
                     return self._error(400, "invalid_request", error.message)
+                # 只返回当前演示身份的通知（王磊的到账通知在切换身份后可见）
+                result["executed"] = [n for n in k.notifications(uid, 100) if n["time"] >= before][::-1]
                 return self._send(200, result)
             if route == "demo/reset":
                 with agent.user_lock("alice"), agent.user_lock("bob"):
