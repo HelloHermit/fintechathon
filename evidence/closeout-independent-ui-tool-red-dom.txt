@@ -1,0 +1,87 @@
+Source: mcp__cua_repl DOM snapshot after independent author's controlled red input; root only executed prescribed Browser steps. No source implementation inspected by test author. Observed 2026-10-11 23:20–23:21 Asia/Shanghai; request subsequently cancelled.
+URL: http://127.0.0.1:57340/
+Title: 银行 AI 助手 · 模拟原型
+Console errors/warnings: []
+
+- link "跳到输入框":
+  - /url: "#message-input"
+- complementary "任务示例":
+  - generic: 银行 AI 助手
+  - navigation "填入一个示例，不会自动发送":
+    - heading "开始一个任务" [level=2]
+    - button "账单分析 看看本月已发生的支出":
+      - strong: 账单分析
+      - generic: 看看本月已发生的支出
+    - button "订阅与代扣 查看或取消模拟订阅":
+      - strong: 订阅与代扣
+      - generic: 查看或取消模拟订阅
+    - button "智能转账 转给已登记的联系人":
+      - strong: 智能转账
+      - generic: 转给已登记的联系人
+  - paragraph: 演示用户 alice
+  - paragraph: 身份由本机配置确定
+- main:
+  - heading "和银行助手聊一聊" [level=1]
+  - paragraph: 说出需求，执行前由你确认。
+  - button "查看审计记录":
+    - text: 查看审计记录
+  - paragraph: 所有账户、资金和平台操作均为模拟，不连接真实银行。
+  - region "与银行助手对话":
+    - log:
+      - article:
+        - paragraph: 你
+        - paragraph: 受控红档请求
+      - article:
+        - heading "模拟转账" [level=3]
+        - generic: 等待本机强验证
+        - paragraph: 日累计超过1000元。请用固定强验证入口提供本人密码与认证器动态码；5分钟有效。验证通过仍需受限隔离就绪，本轮红档业务不放行。
+        - paragraph: 代码判定：红档
+        - paragraph: 请求编号：b84c7f3da9584a6aa387309d7cc39a96
+    - generic: 向银行助手描述需求
+    - textbox "向银行助手描述需求" [active]:
+      - /placeholder: 例如：这个月已经花了多少？
+    - button "发送" [disabled]:
+      - generic: 发送
+    - generic: Enter 发送 · Shift + Enter 换行
+    - status
+  - complementary "操作确认和计划":
+    - heading "操作确认" [level=2]
+    - paragraph: 需要你确认的操作会显示在这里。
+    - region "核对本次操作":
+      - heading "模拟转账" [level=3]
+      - term: 当前用户
+      - definition: alice
+      - term: 代码判定档位
+      - definition: 红档
+      - term: 联系人
+      - definition: 小王
+      - term: 本人账户
+      - definition: alice-main
+      - term: 联系人编号
+      - definition: wang
+      - term: 金额
+      - definition: ¥ 1,001.00
+      - term: 收款账户
+      - definition: bob-main
+      - term: 本次成功后的日累计
+      - definition: ¥ 1,001.00
+      - term: 请求编号
+      - definition: b84c7f3da9584a6aa387309d7cc39a96
+      - paragraph: 从本人模拟账户扣款并给登记联系人模拟账户入账。
+      - paragraph: 红档等待本机强验证。网页可取消本次请求；密码和独立手机认证器动态码只能在本机专用入口输入，请勿粘贴到聊天或网页。
+      - paragraph: 本机入口：scripts/mfa_verify.py，步骤见项目中的《手机验证操作说明.md》。请先取消此网页请求，再在本机入口重新创建并核对操作；网页请求编号不能跨会话复用。
+      - paragraph: 本轮受限隔离尚未实测，即使两种身份因素验证通过，红档业务仍会拒绝，模拟资金不会转出。
+      - paragraph: 有效至 2026/10/11 23:25:33（北京时间）；剩余 4分51秒
+      - button "取消"
+    - heading "执行边界" [level=3]
+    - list:
+      - listitem: 权限由代码判定
+      - listitem: 查询和执行都会记录审计
+      - listitem: 高风险操作条件不足时拒绝
+    - paragraph: 屏显确认码仅用于本次确认，不代表多因素认证。
+
+Read-only form DOM, with no input values read or returned:
+confirm-button: label="确认这次操作", hidden=true, visible=false, disabled=true
+cancel-button: label="取消", hidden=false, visible=true, disabled=false
+message-input: tag=TEXTAREA, type=textarea, name=message, hidden=false, visible=true, disabled=false
+All input elements: none (no password or OTP input)
