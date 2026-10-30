@@ -1,5 +1,0 @@
-Start (Asia/Shanghai): 2026-10-11T20:17:16.890561+08:00
-Command: python tests/test_closeout_independent.py --serve-controlled-ui
-Synthetic registered-user fixture; offline model; no human factors.
-Public URL: http://127.0.0.1:65000/
-Disposable database: C:\fintechathon\tests\.runs\closeout-ui-independent-o5n9jmam\ui.sqlite3
