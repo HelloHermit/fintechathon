@@ -245,7 +245,11 @@ export function scheduledRow(x) {
   const [st, tone] = SCH_STATUS[x.status] || [x.status, ""];
   return h("div.sch-row", null, h("div.sch-ic", null, icon(x.kind === "settlement" ? "clock" : x.kind === "order" ? "gift" : x.kind === "reminder" ? "bell" : "repeat")),
     h("div.sch-main", null, h("div", { text: x.title }), h("div.muted.small", { text: `${SCH_KIND[x.kind] || x.kind} · ${fmtTime(x.run_at, "ymd hm")}${x.repeat && x.repeat !== "none" ? (x.repeat === "monthly" ? " · 每月" : " · 每周") : ""}` })),
-    h("div.right", null, x.amount_cents != null ? h("div.money", { text: yuan(x.amount_cents) }) : null, chip(st, tone)));
+    h("div.right", null, x.amount_cents != null ? h("div.money", { text: yuan(x.amount_cents) }) : null, chip(st, tone),
+      x.revocable && x.status === "scheduled" ? h("button.btn.small.danger-outline", {
+        type: "button",
+        onclick: () => { document.dispatchEvent(new CustomEvent("goto-tab", { detail: "chat" })); quickOrChat("revoke_transfer", { schedule_id: x.schedule_id }, `撤回：${x.title}`, `撤回${x.title}`); },
+      }, "撤回") : null));
 }
 function scheduled_list(d) {
   const items = d.items || [];
