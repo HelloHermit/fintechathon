@@ -466,8 +466,13 @@ class Agent:
         trace = [tools.step("plan", f"计划控制（页面按钮）：{action} → {plan['status']}", "success"),
                  tools.step("audit", "已写入审计", "success")]
         self.kernel.tick()
-        plan = plan_engine.view(plan_engine.load(self.kernel, user_id, plan_id))
-        return self._finish(user_id, turn_id, "[计划控制]", self.response(turn_id, note, plan=plan, trace=trace, user_id=user_id))
+        raw = plan_engine.load(self.kernel, user_id, plan_id)
+        plan = plan_engine.view(raw)
+        blocks = [{"type": "plan", "data": plan}]
+        if action == "takeover" and raw.get("handover_ticket"):
+            blocks.insert(0, {"type": "handover", "data": {"ticket_id": raw["handover_ticket"],
+                                                           "summary": f"计划“{raw['title']}”转人工处理", "status": "waiting"}})
+        return self._finish(user_id, turn_id, "[计划控制]", self.response(turn_id, note, blocks, plan=plan, trace=trace, user_id=user_id))
 
     def _action_insight_accept(self, user_id, ref, value):
         kind = ref.split("-")[1] if ref.startswith("ins-") else ""

@@ -196,7 +196,8 @@ def spending_summary(ctx, period=None):
       {"query": {"type": "string", "description": "用户原话里的称呼/姓名/手机号/用途词"}}, ["query"])
 def find_contacts(ctx, query=""):
     matches = resolvers.contact_matches(ctx.kernel, ctx.user_id, query)
-    return ToolOutcome({"query": query, "matches": [{"name": m["display"], "relation": m["relation"], "phone": m["masked_phone"],
+    return ToolOutcome({"note": "如果用户是要转账/交房租，请直接调用 transfer（payee 用用户原话里的词；没说金额就不填 amount，系统会给建议金额选项）。",
+                        "query": query, "matches": [{"name": m["display"], "relation": m["relation"], "phone": m["masked_phone"],
                                                      "matched_by": m["match"],
                                                      **({"last_transfer": yuan(m["last_transfer"]["amount_cents"]) + (f"（备注 {m['last_transfer']['memo']}）" if m["last_transfer"].get("memo") else "")}
                                                         if m.get("last_transfer") else {})} for m in matches]},
@@ -288,7 +289,7 @@ def _check_date(ctx, when, trace):
 
 @tool("transfer", "给联系人或手机号转账（含定时、每月周期转账）。只会生成待确认单，必须由用户在界面上确认；档位、风险由系统判定。"
       "payee/amount/when 请原样使用用户的说法。",
-      {"payee": {"type": "string", "description": "用户说的收款人：姓名、称呼（小王/妈妈/房东）或手机号"},
+      {"payee": {"type": "string", "description": "用户说的收款人：姓名、称呼（小王/妈妈/房东）、手机号，或用途词（如“房租”“生活费”，系统按历史备注找人）"},
        "amount": {"type": "number", "description": "金额（元），必须是用户说出的数"},
        "when": {"type": "string", "description": "用户说的执行日期原话（如“明天”“11月5号”“下周五下午3点”）；立即转账不填"},
        "repeat": {"type": "string", "enum": ["none", "monthly"], "description": "用户明确说“每月”时为 monthly"},

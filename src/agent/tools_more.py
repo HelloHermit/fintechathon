@@ -455,8 +455,12 @@ def plan_control(ctx, action="", node=None):
                           pending=result["pending"], trace=[step("plan", note, "success"), step("tier", result["tier_reason"], "pending")])
         out.plan = plan_engine.view(plan_engine.load(ctx.kernel, ctx.user_id, plan_id))
         return out
+    extra_blocks = []
+    if action == "takeover" and plan.get("handover_ticket"):
+        extra_blocks.append({"type": "handover", "data": {"ticket_id": plan["handover_ticket"], "summary": f"计划“{plan['title']}”转人工处理",
+                                                          "status": "waiting"}})
     out = ToolOutcome({"status": "done", "plan_status": plan["status"], "message": note},
-                      blocks=[{"type": "plan", "data": plan_engine.view(plan)}, {"type": "note", "data": {"text": note, "tone": "info"}}],
+                      blocks=extra_blocks + [{"type": "plan", "data": plan_engine.view(plan)}, {"type": "note", "data": {"text": note, "tone": "info"}}],
                       trace=[step("plan", f"计划控制：{action} → {plan['status']}", "success")])
     out.plan = plan_engine.view(plan)
     return out

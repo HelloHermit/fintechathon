@@ -58,7 +58,7 @@ def run(mode, cassettes):
             elif step[0] == "strong" and last and last["pending"]:
                 p = last["pending"]
                 kernel.send_otp("alice", p["request_id"])
-                otp = re.search(r"验证码 ([0-9]{6})", kernel.sms_inbox("alice")[0]["text"]).group(1)
+                otp = re.search(r"验证码 ([0-9]{6})", kernel.sms_inbox("alice")[-1]["text"]).group(1)
                 last = agent.kernel_call("alice", kernel.verify_strong, p["request_id"], "135790", otp, risk_acknowledged=True)
                 transcript.append({"action": "strong_auth", "reply": last["assistant"]["text"]})
         kernel.close()

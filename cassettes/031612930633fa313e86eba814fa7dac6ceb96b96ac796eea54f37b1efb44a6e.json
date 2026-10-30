@@ -1,0 +1,1 @@
+{"content": "确认单已生成：明天 09:00 给王磊（小王）转 ¥200，备注“还饭钱”，从尾号 6621 的储蓄卡出。请你在确认单上点确认，我这边不能代点哦。", "tool_calls": [], "model": "deepseek-flash", "usage": {"prompt": 979, "completion": 54}, "ms": 1444}

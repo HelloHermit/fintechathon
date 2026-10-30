@@ -268,7 +268,7 @@ class Kernel:
 
     def sms_inbox(self, user_id):
         rows = self.db.execute("SELECT * FROM sms WHERE user_id=? ORDER BY received_at DESC, rowid DESC LIMIT 30",
-                               (user_id,)).fetchall()
+                               (user_id,)).fetchall()[::-1]  # 按时间先后排列，最后一条是最新的（与前端约定一致）
         return [{"id": r["sms_id"], "from": r["sender"], "text": r["text"], "received_at": r["received_at"]} for r in rows]
 
     # ------------------------------------------------------------------ 用户

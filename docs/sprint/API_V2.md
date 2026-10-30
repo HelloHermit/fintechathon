@@ -275,3 +275,8 @@ PlanSummary = 只含 `plan_id,title,status,created_at,node_count,done_count`。
 
 - `code_analysis` 卡片：`{question, code, engine: "subprocess+netns" | "subprocess" | "docker", limits: {timeout_s, cpu_s, memory_mb, network: false | "未隔离（降级）"}, duration_ms, status: ok|rejected|error, reason?, result: {type: value|table|series, value}}`。`engine="subprocess+netns"` 表示子进程 + 无网络的网络命名空间（Linux 支持时自动启用）；`rejected` 表示代码没通过运行前检查、从未运行。
 - 每轮聊天在审计里追加一条 `event="agent_turn"`（用了哪些工具、事实校验结果）；沙箱运行追加 `event="sandbox_run"`（代码哈希、引擎、耗时、退出状态）。TurnResponse.trace 最后一步是 `kind:"audit"`。
+
+### 5.5 2026-10-30 · v2.0.5（联调修正）
+
+- `GET /api/v2/sim-phone` 的 `messages` **按时间先后排列，最后一条是最新的**（最多 30 条）。之前是最新在前，和前端 `sms.js`、评测 `latest_otp()` 的理解相反，已改正。
+- 计划控制（按钮或聊天）返回的 `assistant.blocks` 里有最新的 `plan` 卡片；`takeover` 时还有一张 `handover` 卡片（`ticket_id, summary, status`）。

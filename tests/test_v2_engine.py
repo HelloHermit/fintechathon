@@ -60,7 +60,7 @@ def propose_transfer(kernel, text, payee, amount, **extra):
 
 
 def otp_from_sms(kernel, user="alice"):
-    return re.search(r"验证码 ([0-9]{6})", kernel.sms_inbox(user)[0]["text"]).group(1)
+    return re.search(r"验证码 ([0-9]{6})", kernel.sms_inbox(user)[-1]["text"]).group(1)
 
 
 class SeedTests(unittest.TestCase):
@@ -154,7 +154,7 @@ class StrongAuthTests(unittest.TestCase):
         self.assertEqual((p["tier"], p["factors"]), ("red", ["pin", "sms_otp"]))
         sent = k.send_otp("alice", p["request_id"])
         self.assertEqual(sent["masked_phone"], "138****0001")
-        sms = k.sms_inbox("alice")[0]["text"]
+        sms = k.sms_inbox("alice")[-1]["text"]
         self.assertIn("刘芳", sms)
         self.assertIn("2,000.00", sms)
         result = k.verify_strong("alice", p["request_id"], "135790", otp_from_sms(k))
@@ -475,7 +475,7 @@ class HttpTests(unittest.TestCase):
         status, sent = self.request("/api/v2/strong-auth/send-otp", {"request_id": rid})
         self.assertEqual(sent["status"], "sent")
         _, inbox = self.request("/api/v2/sim-phone")
-        otp = re.search(r"验证码 ([0-9]{6})", inbox["messages"][0]["text"]).group(1)
+        otp = re.search(r"验证码 ([0-9]{6})", inbox["messages"][-1]["text"]).group(1)
         status, done = self.request("/api/v2/strong-auth/verify", {"request_id": rid, "pin": "135790", "otp": otp})
         self.assertEqual(done["assistant"]["blocks"][0]["type"], "receipt")
         _, audit = self.request("/api/v2/audit?limit=5")

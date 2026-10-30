@@ -1,0 +1,1 @@
+{"content": "", "tool_calls": [{"id": "call_00_6qX2V1L4x0VyGdSwEAsN5002", "name": "transfer", "arguments": "{\"payee\": \"小王\", \"amount\": 200, \"when\": \"明天\", \"memo\": \"还饭钱\"}"}], "model": "deepseek-flash", "usage": {"prompt": 4727, "completion": 88}, "ms": 1251}

@@ -1,0 +1,1 @@
+{"content": "先看下你的风险测评和适合的产品。", "tool_calls": [{"id": "call_00_30Y81ojHm2zBPvB9Tzte9213", "name": "recommend_products", "arguments": "{\"horizon_days\": 180, \"preference\": \"stable\"}"}], "model": "deepseek-flash", "usage": {"prompt": 5127, "completion": 68}, "ms": 1841}
