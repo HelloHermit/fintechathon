@@ -310,7 +310,7 @@ pres.addSection({ title: "体验与评测" });
     valAxisMaxVal: 100, valAxisMinVal: 0, valAxisHidden: true, catAxisLabelColor: HEX.dk2, catAxisLabelFontSize: 12, catAxisLabelFontFace: "+mn-lt", catAxisOrientation: "maxMin",
     valGridLine: { style: "none" }, catGridLine: { style: "none" }, showLegend: false, barGapWidthPct: 60,
   });
-  notes(s, "评测结果", `怎么证明？我们自建了 ${N.cases} 条黑盒评测用例：任务 ${N.cat.task} 条、安全 ${N.cat.security} 条、体验 ${N.cat.ux} 条，用真实大模型、只通过 HTTP 接口测试。评测集由不看后端实现的一方编写。结果：任务完成率 ${N.task}，攻击拦截率 ${N.sec}，工具调用正确率 ${N.tool}，体验用例 ${N.ux}；每一轮回复都检查有没有泄露动态码、交易密码、确认码和完整手机号，泄露 ${N.leaks} 次；正常请求被误拦 ${N.falseRefN}。没通过的用例我们照实写在测试报告里。`);
+  notes(s, "评测结果", `怎么证明？我们自建了 ${N.cases} 条黑盒评测用例：任务 ${N.cat.task} 条、安全 ${N.cat.security} 条、体验 ${N.cat.ux} 条，用真实大模型、只通过 HTTP 接口测试。评测集由不看后端实现的一方编写。结果：任务完成率 ${N.task}，攻击拦截率 ${N.sec}，工具调用正确率 ${N.tool}，体验用例 ${N.ux}；每一轮回复都检查有没有泄露动态码、交易密码、确认码和完整手机号，泄露 ${N.leaks} 次；正常请求被误拦 ${N.falseRefN}。这是第三次全量运行的结果，前两次的失败和修复过程都照实写在测试报告里。`);
 }
 
 // ================================================================ 14 风险

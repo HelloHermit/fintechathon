@@ -4,14 +4,23 @@
 
 ## 当前状态
 
-- 正在做：B3 第二轮全量评测（A11 代码上）；B5 文档初稿（架构图、技术文档、安全自评、测试报告、README）
-- 下一步：B6 材料（PPT、讲稿、视频脚本、自动录屏）；评测数字定稿后同步到全部材料
-- 检查点：CP1 前端部分已达成（10-30 21:43）；**评测首跑已出报告（10-30 22:03，早于 CP2 计划）**
+- 状态（10-31 01:20）：**B0–B6 初稿全部完成并已推送**；B7 的“全新克隆能跑、文档链接有效”已先检查通过。评测第三次全量（`dee1f4e`）151/151。
+- **队长说“继续”后的下一步**：
+  1. `git pull`，读 `docs/sprint/status-A.md`，跟进接口变更与 A 的留言。
+  2. **11-01 22:00 最终评测**（功能冻结 20:00 之后）：`python bench/run_bench.py --start`（约 10 分钟）。失败项先判断是后端问题还是用例/运行器问题，照实记录。
+  3. 用最终评测数字同步材料：`docs/测试报告.md` 第 1、3.2、3.4、3.5 节，`README.md` 评测表，`docs/技术文档.md` 第 1、8 节，`docs/安全自评报告.md` 第 1、5 节（这几处是手写的）；然后 `cd deliverables/tools && node build_ppt.js`（PPT 与讲稿自动读 `bench/reports/latest.json`，但讲稿第 13 页写了“第三次全量运行”，要按实际改）、`node build_docs.js pdf`。
+  4. 用冻结后的代码重启后端（`python run.py --reset`），`node deliverables/tools/screens.js` 重截图，`node deliverables/tools/record_video.js` 重录视频，再 `python deliverables/tools/video_script.py` 更新分镜时间，抽帧检查。
+  5. B7：全新克隆三条命令启动；`grep -rn "{{\|TODO\|待队长填写"` 检查占位；各材料数字一致；打 `v1.0` 标签（Release 附源码包需要在 GitHub 网页上操作，或请队长操作）。
+- 检查点：CP1（10-30 21:43）、评测首跑（10-30 22:03）、CP2/CP3 的评测与材料初稿（10-31 01:10）均已达成。
 
 ## 已完成（附验证方式与结果）
 
 | 时间 | 步骤 | 内容 | 怎么验证的 | 结果 |
 |---|---|---|---|---|
+| 10-31 01:20 | B6 | `deliverables/作品简介.txt`（190 字）；`答辩PPT.pptx`（15 页，pptxgenjs 生成，评测数字读 `latest.json`）与 `讲稿.md`（约 2440 字 / 9 分钟）；`演示视频.mp4`（Playwright 自动录屏 + ffmpeg 中文字幕，2 分 55 秒，4.6MB）、`演示视频字幕.srt`、`视频脚本.md` | PPT：校验 All validations PASSED，LibreOffice 渲染 15 页逐页检查（修了 3 处）；视频：抽 22 帧检查画面与字幕一致（第一次理财段没出问卷，改说法后重录） | 通过 |
+| 10-31 01:10 | B3 | 第三次全量评测（`dee1f4e`） | `python bench/run_bench.py --start` | **151/151**：任务 87/87、安全 45/45、体验 19/19；泄露 0；误拒 0/107；平均 1.98 秒/轮 |
+| 10-31 00:50 | B5 | `README.md` 重写；`docs/技术文档.md`、`docs/安全自评报告.md`（11 条已知风险）、`docs/测试报告.md`；`docs/diagrams/*.mmd` → `docs/images/*.svg/png`（5 张图）；`docs/images/screens/`（15 张真实后端截图）；`deliverables/pdf/` 四份 PDF；工具 `deliverables/tools/build_docs.js`、`screens.js` | 链接检查（10 个文档，全部有效）；PDF 逐页渲染检查图片；单元测试 357 项（新版 64 项全过，旧 293 项与基线一致）；全新克隆后 `python run.py` 首页与接口 200 | 通过 |
+| 10-31 00:34 | B3 | 第二次全量评测（`dad2f50`） | 同上 | 149/151：T3-b（后端，A 已修）、K5-b（运行器按“最新在后”取短信的缺陷，已修，单独重跑 9 条全过） |
 | 10-30 21:21 | B0 | 仓库清理：删除 `_codex_tmp/`、`design/references/`、`design/ui_reference_pack.zip`、根目录 10 个过程文件；`docs/00`–`42` 与 `model-configuration.md` 移到 `docs/history/`（加 `README.md` 索引）；`AGENTS.md` → `docs/history/AGENTS-codex-era.md`；旧根目录 README → `docs/history/README-第一阶段.md`（链接已改成新位置），根目录换成临时 README。`dist/` 在 main 上本来就不存在。`spec/`、`evidence/`、`design/browser-concept.png`（自绘概念图）保留 | 清理后跑旧测试 `python -m unittest discover -s tests -p 'test_*.py'` | 293 项，与 A0 基线一致：只有 `test_docker_isolation_independent` 的 setUpClass 报错（需要 Docker 运行时，属预期），跳过 2 项，128 秒 |
 
 | 10-30 21:41 | B1 | 新前端（`src/web_assets/index.html` + `app/*.js` + `app/styles.css`，纯 ES 模块、无第三方库、无内联脚本和样式，符合同源 CSP）：底部五个标签（首页 / 小安 / 账单 / 卡片 / 我的）；桌面端居中手机外框，右侧“演示控制”“安全透视”“模拟手机·短信”三块面板；手机宽度（≤900px）全屏显示，三块面板放进“我的”。`?mock=1` 用浏览器内假后端（`app/mock.js` + `mock/*.json`，按 API_V2 结构）。同时完成了 B2 的大部分：API_V2 第 3 节全部 24 种 Block 渲染、黄档确认面板（风险勾选、冷静期倒计时、到账方式切换、有效期倒计时）、红档强验证面板（数字键盘 + 获取动态码 + 60 秒重发）、计划 DAG（SVG 依赖图 + 节点明细 + 暂停/继续/回退/转人工）、快捷回复、选项追问、回执、审计哈希链页、决策链回放、演示控制、PWA 清单与图标、语音输入按钮（浏览器支持时） | 本地起静态服务（与真实服务同样的 CSP 头），Playwright 跑完整假数据流程：首页 → 定时转账黄档确认 → 回执 → 红档转账（取短信动态码 + 交易密码）→ 异常识别 → 账单 → 生日计划整体确认 → 快进到 11-10 → 账单/卡片/我的；桌面 1360×900 与手机 390×844 各截图检查；旧测试 `tests.test_web_acceptance` | 浏览器控制台 0 错误 0 CSP 违规；截图人工检查通过（修了 6 处显示问题：确认按钮状态、DAG 文字截断、短信横幅残留、重复说明、焦点框、占位文字换行）；`tests.test_web_acceptance` 27 项通过 |
@@ -55,4 +64,7 @@
 
 ## 给队长的话（需要人来做的事）
 
-- 暂无。
+1. **填写团队分工**：`docs/技术文档.md` 第 11 节有一处【待队长填写每人的分工】；PPT 第 15 页只写了“三名大一学生”，如需写名字和分工告诉我。
+2. **看一遍材料**：`deliverables/答辩PPT.pptx`、`deliverables/演示视频.mp4`（约 3 分钟，无配音，只有字幕；如果想要配音，可以照 `deliverables/视频脚本.md` 的字幕朗读后合成）、`deliverables/作品简介.txt`。
+3. **Docker 实测**（可选）：云端没有 Docker 守护进程，`Dockerfile` 没有实际构建过。如果有装了 Docker 的电脑，跑一次 `docker compose up --build` 告诉我结果。
+4. **11-02 18:00 前在报名系统提交**（只有队长能做）。
