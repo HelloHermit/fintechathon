@@ -1,0 +1,325 @@
+{
+  "report_type": "implementation_side_frontend_development_qa",
+  "author_role": "app.js实现作者；属于开发验证，不是独立验收作者",
+  "report_written_at_shanghai": "2026-10-11T23:19:55.311459+08:00",
+  "time_zone": "Asia/Shanghai",
+  "timing": {
+    "original_service_started_at_shanghai": "2026-10-11T20:12:23.037756+08:00",
+    "original_browser_scenario_started_at_shanghai": "2026-10-11T20:13:04.092791+08:00",
+    "original_browser_scenario_finished_at_shanghai": "2026-10-11T20:17:12.835158+08:00",
+    "original_final_database_evidence_written_at_shanghai": "2026-10-11T20:17:57.383613+08:00",
+    "original_service_stopped_at_shanghai": null,
+    "evidence_work_resumed_at_shanghai": "2026-10-11T23:15:51+08:00",
+    "basis": "起始/末次业务时间来自仅本机临时模拟库的audit_log.timestamp；截图时间来自原始临时JPEG文件元数据。末次数据库核对时间来自database_check.json原文件mtime；不能据此推断原服务精确退出时间。本次恢复起点来自clock UTC+08:00。20:00内部节点已过，本记录不是按时达标承诺。"
+  },
+  "change": {
+    "file": "src/web_assets/app.js",
+    "git_head_commit_used_for_before_reference": "4245af70f21dd17539a013acf6e7b6d8fa432107",
+    "before_reference_sha256": "835bf9efd88f3dd1a9839018ea4cba4c580eef3630e7f9160bf72dd2d4c20413",
+    "before_reference_method": "git show HEAD:src/web_assets/app.js 的原始字节；未在改动前记录工作区文件hash，因此这只是Git基线参考，不能冒称精确修前工作区hash，行尾也可能不同。",
+    "after_working_file_sha256": "2a379794a022a17d9c0894a429ef1abfa8d3a8f2d4bf97bfe5039c290cda92a5",
+    "summary": [
+      "合法red pending展示完整操作、金额、实际收款账户、日累计、有效期，并标为等待本机强验证。",
+      "red不接受confirmation_code字段，仅允许transfer且检查完整目标、金额一致与累计字段；通用回执要求可信当前用户、simulated、意图一致、非空编号及合法有效期。",
+      "red隐藏屏显码行和网页确认按钮；按钮控制和固定确认处理函数都要求tier=yellow；red保留取消。",
+      "解释scripts/mfa_verify.py本机专用入口，先取消网页请求，再在本机创建并核对新请求；禁止跨会话复用网页编号、禁止把因素放聊天或网页；隔离未实测仍拒绝red。",
+      "clearPending恢复黄档控件；黄档原屏显六位码和固定确认接口保留，屏显码不是MFA。"
+    ],
+    "other_source_files_changed_by_this_agent": []
+  },
+  "environment": {
+    "url": "http://127.0.0.1:62842/",
+    "browser": "Codex In-app Browser，mcp__cua_repl；Browser能力实际可用，无常规Playwright fallback",
+    "viewport": {
+      "width": 1280,
+      "height": 720,
+      "document_scroll_width": 1280
+    },
+    "browser_session_label": "红档网页核对",
+    "server_interface": "src.WEB_API公开离线测试约定：BankService + LocalServer((127.0.0.1,0),BrowserHandler)，bank/csrf_token/model/model_configured公开依赖。端口0实际分配62842。",
+    "database": {
+      "temporary_path": "C:\\Users\\KindHermit\\AppData\\Local\\Temp\\fintech-frontend-fcdd9aa43c6649b5a09e54c905a1f512\\simulated.db",
+      "normal_data_bank_db_accessed": false,
+      "included_in_delivery": false
+    },
+    "model": {
+      "kind": "公开propose(text,context)固定离线候选模型",
+      "real_model_calls": 0,
+      "local_model_configuration_or_keys_read": false
+    },
+    "offline_fixture": {
+      "initial_accounts_cents": [
+        [
+          "alice-main",
+          1000000
+        ],
+        [
+          "alice-savings",
+          500000
+        ],
+        [
+          "bob-main",
+          100000
+        ]
+      ],
+      "enrollment_fixture": "管理员在独立临时库写入仅合成strong_auth行，让已登记分支可被复现；不是本人登记，不调用strong_verify，不提供或导出任何真人因素。临时库含合成配对秘密，不交付。",
+      "candidates": [
+        {
+          "text": "红档演练",
+          "candidate": {
+            "intent": "transfer",
+            "params": {
+              "account_id": "alice-main",
+              "contact_id": "wang",
+              "amount_cents": 100100
+            }
+          }
+        },
+        {
+          "text": "黄档演练",
+          "candidate": {
+            "intent": "transfer",
+            "params": {
+              "account_id": "alice-main",
+              "contact_id": "wang",
+              "amount_cents": 10000
+            }
+          }
+        },
+        {
+          "text": "订阅演练",
+          "candidate": {
+            "intent": "query_subscriptions",
+            "params": {}
+          }
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "UI-RED-BEFORE",
+      "input": "修前已登记合成用户在网页发送红档演练（100100分）",
+      "expected": "合法red pending无屏显码，展示完整操作且可取消，网页无MFA因素入口。",
+      "actual": "后端pending/red；页面提示待确认回执缺少完整参数、有效期或确认码，操作栏为空，取消不可用。",
+      "was_run": true,
+      "result": "reproduced_defect",
+      "request_id": "29d529cf5b6b47f1a88e6a6090dded2c",
+      "verification": "真实公开HTTP回执、Browser DOM与修前截图；另一次受控HTTP读回执核对operation完整且无confirmation_code。"
+    },
+    {
+      "id": "UI-RED-AFTER",
+      "input": "重载最新app.js后发送红档演练；点击取消",
+      "expected": "完整red待验证操作可见；confirm隐藏且disabled、无码；取消同一请求后清空待处理栏，不转账。",
+      "actual": "显示alice/alice-main/小王/bob-main/1001元/累计1001元/期限；confirmVisible=false、confirmEnabled=false、cancelEnabled=true、codeText为空；点击取消返回cancelled，同编号且操作栏清空。",
+      "was_run": true,
+      "result": "passed",
+      "request_id": "4c9e0589093c4b869dee693dbe178aea",
+      "audit_times_shanghai": {
+        "waiting_strong_verification": "2026-10-11T20:15:27.293856+08:00",
+        "cancelled": "2026-10-11T20:15:28.043653+08:00"
+      },
+      "verification": "Browser重载/DOM/控件状态/点击/回执与SQLite审计；修后引导、取消截图。"
+    },
+    {
+      "id": "UI-YELLOW-TRANSFER",
+      "input": "红档取消后发送黄档演练（10000分）；点击确认这次操作",
+      "expected": "黄档码栏与确认恢复，固定确认后只转10000分一次。",
+      "actual": "confirmVisible=true、confirmEnabled=true、cancelEnabled=true、yellowCodeHasSixDigits=true；提交固定确认后success，显示100元；码清空。未记录或截图有效码。",
+      "was_run": true,
+      "result": "passed",
+      "request_id": "f71c3703822a47638bf5b9b1a5d32b53",
+      "audit_times_shanghai": {
+        "confirmed": "2026-10-11T20:15:42.140623+08:00",
+        "executed": "2026-10-11T20:15:42.364599+08:00"
+      },
+      "verification": "Browser实际按钮点击与成功DOM、成功后截图、SQLite一笔转账及双方余额断言。"
+    },
+    {
+      "id": "UI-RED-REPLACED-BY-SUBSCRIPTIONS",
+      "input": "完成黄档转账后再次发送红档演练，再发送订阅演练并点击固定确认",
+      "expected": "新需求使旧red失效；黄档订阅确认控件恢复；确认后才显示本人订阅。",
+      "actual": "新需求将旧red记cancelled；订阅码栏和confirm恢复；确认后显示未来一个续费周期预计59.70元；最终码为空。",
+      "was_run": true,
+      "result": "passed",
+      "red_request_id": "ec33cce57eb948eb8812c51f41952b60",
+      "yellow_request_id": "7426fe7b339b4efa8e9be1cc85ef1ad7",
+      "audit_times_shanghai": {
+        "red_cancelled": "2026-10-11T20:17:12.612158+08:00",
+        "subscription_executed": "2026-10-11T20:17:12.835158+08:00"
+      },
+      "verification": "Browser控件布尔值、确认后可见文字与本机临时库审计。"
+    }
+  ],
+  "sqlite_checks": {
+    "was_run": true,
+    "scope": "只读自身临时模拟库，未读取strong_auth内容作为证据，未读取任何正常库",
+    "queries_and_results": [
+      {
+        "sql": "select account_id,balance_cents from accounts order by account_id",
+        "result": [
+          [
+            "alice-main",
+            990000
+          ],
+          [
+            "alice-savings",
+            500000
+          ],
+          [
+            "bob-main",
+            110000
+          ]
+        ]
+      },
+      {
+        "sql": "select amount_cents,status from transfers",
+        "result": [
+          [
+            10000,
+            "success"
+          ]
+        ]
+      },
+      {
+        "sql": "select status,count(*) from requests where tier='red' group by status",
+        "result": [
+          [
+            "cancelled",
+            5
+          ]
+        ],
+        "note": "包含修前复现、公开回执探查与重载创建的红档请求；不是五次转账成功。"
+      },
+      {
+        "sql": "select count(*) from audit_log where tier='red' and event='executed'",
+        "result": 0
+      },
+      {
+        "sql": "select count(*) from audit_log where tier='red' and event='cancelled'",
+        "result": 5
+      }
+    ],
+    "assertions": "余额为990000/500000/110000分；transfers恰好一笔10000分success；red executed为0，red取消日志存在。原查询脚本exit0。",
+    "original_local_output_reference": "C:\\Users\\KindHermit\\AppData\\Local\\Temp\\fintech-frontend-fcdd9aa43c6649b5a09e54c905a1f512\\database_check.json",
+    "original_local_output_sha256": "d7d820f8e1c2c4a28422b936f9fa5c5b1705af1c85a0b5ee0dff3bed4141bc5f"
+  },
+  "browser_checks": {
+    "page_identity": {
+      "result": "passed",
+      "url": "http://127.0.0.1:62842/",
+      "title": "银行 AI 助手 · 模拟原型"
+    },
+    "not_blank": {
+      "result": "passed",
+      "evidence": "DOM包含任务示例、模拟提示、消息框与操作栏"
+    },
+    "framework_overlay": {
+      "result": "passed",
+      "evidence": "DOM和截图未见框架错误覆盖层；页面是静态JS"
+    },
+    "console_health": {
+      "result": "passed",
+      "query": "frontendTab.dev.logs({levels:['error','warn'],limit:50})",
+      "actual": []
+    },
+    "screenshot_evidence": {
+      "result": "passed",
+      "evidence": "四张图经检查；黄档图在成功后采集，无码"
+    },
+    "interaction_proof": {
+      "result": "passed",
+      "evidence": "实际red取消、yellow转账确认、新任务使red失效、yellow订阅确认"
+    },
+    "horizontal_overflow": {
+      "result": "passed",
+      "client_width": 1280,
+      "scroll_width": 1280
+    }
+  },
+  "commands_and_tool_sequence": {
+    "service_start_command": "& 'C:/Users/KindHermit/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe' 'C:\\Users\\KindHermit\\AppData\\Local\\Temp\\fintech-frontend-fcdd9aa43c6649b5a09e54c905a1f512\\frontend_service.py'",
+    "service_working_directory": "C:/fintechathon",
+    "original_service_helper_sha256": "5675d633fb561abcc9d95801459ba5ace64c4a7f67567108c91279b3f843f276",
+    "original_database_check_helper_sha256": "836ae0b0796835d6f9df375ed4892fde58bf6d650344c78a61725b1c091326dd",
+    "helper_policy": "原helper只在本机临时目录；服务helper创建合成登记条件，未复制至交付。此报告给公开依赖/候选/查询及原本机路径，不交付临时账本。",
+    "browser_sequence": [
+      "cua.getState()",
+      "cua.createBrowserTab('iab', url, {visible:false})",
+      "cua.getBrowser({id:2}); nameSession",
+      "frontendTab.playwright.getByLabel(...).fill; getByRole(...).click",
+      "frontendTab.reload()",
+      "domSnapshot / locator visible+enabled+codeIsSixDigits布尔核对 / dev.logs / screenshot",
+      "取消与确认实际点击后DOM核对",
+      "frontendTab.close()"
+    ],
+    "source_syntax_check": {
+      "command": "bundled node --check src/web_assets/app.js",
+      "exit_code": 0
+    },
+    "diff_check": {
+      "command": "bundled git diff --check -- src/web_assets/app.js",
+      "exit_code": 0,
+      "note": "Git只提示未来写回行尾LF→CRLF；没有差异空白错误"
+    },
+    "database_assertion_check": {
+      "command": "bundled python <本人临时目录>/check_database.py",
+      "exit_code": 0
+    }
+  },
+  "service_cleanup": {
+    "original_observation": "开发验证后关闭本人创建的IAB临时页；对本人foreground exec会话62619发送Ctrl+C，工具返回exit1且无文本。没有正常退出证据，因此不称正常停止。",
+    "resumed_status_checked_at_shanghai": "2026-10-11T23:17:06.993462+08:00",
+    "status_method": "Windows .NET IPGlobalProperties.GetActiveTcpListeners()仅筛选62842；Process.GetProcessesByName(python)计数",
+    "listener_count_for_62842": 0,
+    "python_process_count": 0,
+    "additional_cleanup_performed": false,
+    "reason": "恢复时没有该端口监听且无python进程，未终止任何其他用户进程；临时模拟库留在本机temp且不交付。",
+    "failed_optional_probe": "Get-CimInstance进程命令行读取被拒绝；本机socket探测超时，未把超时当未监听。最终停止状态依据上述成功.NET枚举。"
+  },
+  "screenshots": [
+    {
+      "path": "evidence/closeout-frontend-before-red.jpg",
+      "description": "修前：合法red pending被误报缺少确认码，授权栏为空。",
+      "sha256": "8d98bf50f1ec49ac397bfd66ef16287750d1205e7c5b2dd6c562cd55f155560a",
+      "original_capture_file_time_shanghai": "2026-10-11T20:14:47.154862+08:00",
+      "contains_live_confirmation_or_authentication_code": false
+    },
+    {
+      "path": "evidence/closeout-frontend-red-guide.jpg",
+      "description": "修后：本机强验证入口、新请求要求、隔离拒绝说明与取消按钮。",
+      "sha256": "1276e5cf76d56aba4b397e57bbfc6d2205c96a6016c9e53ee80a5fbc6bb1bde2",
+      "original_capture_file_time_shanghai": "2026-10-11T20:15:27.803528+08:00",
+      "contains_live_confirmation_or_authentication_code": false
+    },
+    {
+      "path": "evidence/closeout-frontend-red-cancel.jpg",
+      "description": "红档取消回执，同一请求编号，授权栏清空。",
+      "sha256": "0d6fba6d64f70e474c033df85b68588cd508a82c1f98417a3055e6d5f9794968",
+      "original_capture_file_time_shanghai": "2026-10-11T20:15:41.290835+08:00",
+      "contains_live_confirmation_or_authentication_code": false
+    },
+    {
+      "path": "evidence/closeout-frontend-yellow-success.jpg",
+      "description": "黄档固定确认后仅100元模拟转账成功；截图时确认码已清除。",
+      "sha256": "e91c867c9409feaefa50a7916c14d842854e527732fccefb5fc90bfcb1332562",
+      "original_capture_file_time_shanghai": "2026-10-11T20:15:42.587481+08:00",
+      "contains_live_confirmation_or_authentication_code": false
+    }
+  ],
+  "boundaries": {
+    "implementation_side_qa_not_independent_acceptance": true,
+    "frontend_code_frozen_after_original_checks": true,
+    "resumed_work_only_added_this_evidence_json": true,
+    "no_new_web_password_authenticator_secret_or_otp_route": true,
+    "no_red_business_execution": true,
+    "untested_here": [
+      "真人登记、独立手机持有、真实终端无回显",
+      "受限执行隔离或正式渠道",
+      "移动端（用户要求待云端后）",
+      "该开发侧Browser轮次未单独覆盖5分钟真等待与全部畸形回执；以独立验收另行报告为准",
+      "真实模型自然语言与付费调用"
+    ],
+    "most_uncertain_point": "本轮独立设备与真实终端未验，屏显码不是MFA；该修复只修网页回执显示/取消与入口引导，不证明强验证或隔离已完整实测。"
+  }
+}
