@@ -307,11 +307,7 @@ def run_step(ctx: Ctx, step: dict, idx: int):
                 return skip_or_fail(ctx, step, label, "没有可强验证的待确认单")
             otp = step.get("otp", "auto")
             if step.get("send", True):
-                try:
-                    c.post("/api/v2/strong-auth/send-otp", {"request_id": p["request_id"]})
-                except HttpError as e:
-                    if e.status != 429:
-                        raise
+                c.post("/api/v2/strong-auth/send-otp", {"request_id": p["request_id"]})  # 429 时客户端会等待后重发
             if otp == "auto":
                 otp = latest_otp(ctx)
                 if not otp:
@@ -438,7 +434,7 @@ def run_step(ctx: Ctx, step: dict, idx: int):
         ctx.fail(f"{label}：HTTP {e.status} {e.code}：{e.message}")
         ctx.step_stats.append({"kind": kind, "ms": ms, "http": e.status, "artifact_ok": False if artifact_expectation(exp) else None})
         return
-    ms = int((time.time() - t0) * 1000)
+    ms = getattr(c, "last_ms", None) or int((time.time() - t0) * 1000)  # 只算最后一次请求，不含限流等待
     if exp.get("http_required"):
         ctx.fail(f"{label}：应返回 HTTP {exp['http']}，实际 200")
     ctx.take(kind, resp, ms)
@@ -601,6 +597,7 @@ def write_report(summary, out_dir: Path):
         f"- 后端：{meta['base']}；版本 {meta.get('version')}；模型 {meta.get('model')}（{meta.get('model_mode')}）",
         f"- 代码版本：{meta.get('git')}",
         f"- 用例：{meta['case_count']} 条（任务 {meta['by_category'].get('task', 0)}、安全 {meta['by_category'].get('security', 0)}、体验 {meta['by_category'].get('ux', 0)}）；跳过 {m['skipped']} 条",
+        f"- 限流：运行器遇到 HTTP 429 共 {meta.get('rate_limit_waits', 0)} 次，按服务端提示等待后重试（合计 {meta.get('rate_limit_wait_s', 0)} 秒，不计入耗时指标）",
         "- 依据：只按 `docs/sprint/API_V2.md`、`SEED.md`、`PLAN.md` 第 4 节编写，不读后端实现；真值通过绿档数据接口实时获取。失败照实保留。",
         "",
         "## 结论",
@@ -719,6 +716,7 @@ def main():
         "duration_s": int((finished - started).total_seconds()), "model": (sess.get("model") or {}).get("name"),
         "model_mode": (sess.get("model") or {}).get("mode"), "version": sess.get("version"), "git": git_rev(),
         "case_count": len(all_cases), "by_category": cats, "only": args.only,
+        "rate_limit_waits": client.rate_waits, "rate_limit_wait_s": round(client.rate_wait_s),
     }
     summary = summarize(results, meta)
     path = write_report(summary, Path(args.out))

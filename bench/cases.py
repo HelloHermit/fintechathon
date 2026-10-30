@@ -391,8 +391,9 @@ def build():
     add("T7", "T7", "task", "转账", "高风险延时到账与撤回：给13900000123转9000 → 24 小时到账 → 撤回",
         [say("给13900000123转9000", pending=R("小龙", "¥9,000.00", risk="high", ack=True, cooldown=True)),
          wait(31), verify(receipt=["scheduled", "success"]),
-         say("撤回刚才那笔", any_blocks=["receipt", "options"]),
-         confirm(optional=True, receipt=["revoked", "success"])],
+         check("延时到账在途、可撤回", lambda ctx: None if any(x.get("revocable") and x.get("status") == "scheduled" for x in ctx.c.scheduled()) else "定时任务里没有可撤回的在途转账"),
+         say("撤回刚才那笔", pending=Y("9,000")),
+         confirm(receipt=["revoked", "success"])],
         priority="P1", ledger={"alice-main": 0})
     add("T8", "T8", "task", "转账", "余额不足的恢复：给小王转3万",
         [say("给小王转3万", no_success=True, text_any=["余额不足", "不够", "储蓄账户", "8803"])], priority="P1", ledger={"alice-main": 0})
@@ -530,7 +531,7 @@ def build():
         birthday + [plan("rollback"), confirm(optional=True), check("计划状态", plan_state(lambda p: None if p.get("status") == "rolled_back" else f"计划状态应为 rolled_back，实际 {p.get('status')}")),
                     check("预算释放", reserved_total(0))])
     add("X4-c", "X4", "task", "联动", "转人工：生成接管单",
-        birthday + [plan("takeover", any_blocks=["handover", "plan"]), check("计划状态", plan_state(lambda p: None if p.get("status") == "handed_over" else f"计划状态应为 handed_over，实际 {p.get('status')}"))])
+        birthday + [plan("takeover", fn=lambda ctx, r: None if ((r.get("plan") or {}).get("status") == "handed_over" or any(b["type"] == "handover" for b in r["assistant"]["blocks"])) else "转人工后应返回接管单或 handed_over 状态的计划"), check("计划状态", plan_state(lambda p: None if p.get("status") == "handed_over" else f"计划状态应为 handed_over，实际 {p.get('status')}"))])
     variants("X5", "task", "联动", "自然语言发起计划", ["我老婆下个月12号生日，帮我准备一下", "下个月12号是周屿生日，帮我安排鲜花和蛋糕"],
              lambda t: [say(t, pending=Y(plan=True), fn=plan_shape, tools=["create_plan"])], priority="P1")
 

@@ -27,6 +27,8 @@ class Client:
         self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.jar))
         self.csrf = None
         self.session = None
+        self.rate_waits = 0
+        self.rate_wait_s = 0.0
 
     # ---- 底层 ----
     def _req(self, method: str, path: str, body=None, headers=None, csrf=True):
@@ -61,7 +63,19 @@ class Client:
         return self._req("GET", path + ("?" + urllib.parse.urlencode(q) if q else ""))
 
     def post(self, path, body=None, **kw):
-        return self._req("POST", path, body, **kw)
+        """HTTP 429（限流 / 动态码 60 秒内重发）时按提示等待后重试：评测跑得比真人快，不应把限流算成功能失败。"""
+        for attempt in range(8):
+            try:
+                return self._req("POST", path, body, **kw)
+            except HttpError as e:
+                if e.status != 429 or attempt == 7:
+                    raise
+                err = e.body.get("error") or {}
+                wait = err.get("resend_after_seconds") or (err.get("detail") or {}).get("retry_after_seconds") or err.get("retry_after_seconds") or 8
+                wait = min(max(float(wait), 1.0), 65.0) + 0.5
+                self.rate_waits += 1
+                self.rate_wait_s += wait
+                time.sleep(wait)
 
     # ---- 会话 ----
     def refresh_session(self):
