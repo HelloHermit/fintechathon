@@ -1,0 +1,18 @@
+{
+  "kind": "independent_six_live",
+  "max_calls": 2,
+  "groups": [
+    9
+  ],
+  "source_sha256": {
+    "src\\SIX_SCENARIO_API.md": "744bda2073124589c75c6516744b6de34858f96f8eea03c0dc1b82d81a06e2e0",
+    "src\\CONTEXT_API.md": "55766d7071b6e647529c8a73910528b07674b8894ca25f3b5467fe398447541c",
+    "docs\\39-six-live-matrix.md": "5ef11960eb17223d6c02bcd9f10221cb51610a111b6a1c19754ab5fa486e4716",
+    "tests\\run_six_live_acceptance.py": "e4e9f81d3c691c0572504366f0516821a9246e0bf992ded269c774ca56fab939"
+  },
+  "simulated": true,
+  "fixed_shanghai_clock": "2026-10-27T10:00:00+08:00",
+  "author_read_implementation": false,
+  "retries": 0,
+  "cost": "unknown"
+}
