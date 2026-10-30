@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS suspicious_events(
     kind TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS notifications(
     notification_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, time TEXT NOT NULL,
-    kind TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, read INTEGER NOT NULL DEFAULT 0);
+    kind TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, read INTEGER NOT NULL DEFAULT 0, ref TEXT);
 CREATE TABLE IF NOT EXISTS aa_requests(
     aa_id TEXT PRIMARY KEY, batch_id TEXT NOT NULL, from_user TEXT NOT NULL,
     payer_contact_id TEXT NOT NULL, payer_name TEXT NOT NULL, payer_user TEXT,
@@ -148,4 +148,12 @@ def connect(path):
     if str(path) != ":memory:":
         connection.execute("PRAGMA journal_mode=WAL")
     connection.executescript(SCHEMA)
+    migrate(connection)
     return connection
+
+
+def migrate(connection):
+    """给旧演示库补列（只加列，不删数据）。"""
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(notifications)")}
+    if "ref" not in columns:
+        connection.execute("ALTER TABLE notifications ADD COLUMN ref TEXT")

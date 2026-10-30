@@ -3,6 +3,7 @@
 import json
 from datetime import datetime, timedelta
 
+from .ops_more import aa_requests_for
 from .seed import PRODUCT_DISCLAIMER
 from .util import SHANGHAI, iso, parse_iso, yuan
 
@@ -127,4 +128,5 @@ def home(k, user_id):
                               {"label": "我的卡", "prompt": "我有哪些卡"},
                               {"label": "理财", "prompt": "推荐点稳一点的理财，放半年"},
                               {"label": "自动扣费", "prompt": "我有哪些自动扣费"}],
-            "notifications": k.notifications(user_id, 10)}
+            "notifications": k.notifications(user_id, 10),
+            "aa_requests": [i for i in aa_requests_for(k, user_id) if i["direction"] == "incoming" and i["status"] == "open"]}

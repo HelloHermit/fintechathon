@@ -57,6 +57,10 @@ class TaskContext:
     def joined(self):
         return "\n".join(self.texts)
 
+    @property
+    def current(self):
+        return self.texts[-1] if self.texts else ""
+
     def mentions(self, word):
         if not word:
             return False
@@ -68,7 +72,8 @@ def tool_specs(names=None):
     return [TOOLS[n]["schema"] for n in (names or TOOLS)]
 
 
-def run_tool(name, args, ctx):
+def run_tool(name, args, ctx, internal=None):
+    """internal：代码内部（点选、页面按钮）附加的参数，不经过模型，也不在模型可见的 schema 里。"""
     entry = TOOLS.get(name)
     if entry is None:
         return ToolOutcome({"status": "error", "message": f"没有名为 {name} 的工具"},
@@ -79,6 +84,8 @@ def run_tool(name, args, ctx):
     extra = set(args) - allowed
     if extra:
         args = {k: v for k, v in args.items() if k in allowed}
+    if internal:
+        args = dict(args, **internal)
     try:
         outcome = entry["fn"](ctx, **args)
     except NeedChoice as choice:
@@ -317,9 +324,27 @@ def transfer(ctx, payee="", amount=None, when=None, repeat="none", memo=None, fr
               "memo": memo_text, "run_at": run_at, "repeat": repeat if run_at else "none", "arrival": "instant",
               "signals": signals}
     params = {k: v for k, v in params.items() if v not in (None, "")}
-    result = ctx.kernel.propose(ctx.user_id, "transfer", params, turn_id=ctx.turn_id,
+    try:
+        result = ctx.kernel.propose(ctx.user_id, "transfer", params, turn_id=ctx.turn_id,
                                 provenance={"payee": payee_source, "amount": "user_text" if not ctx.selections.get("amount_cents") else "user_selected",
                                             "date": "user_text" if run_at else None})
+    except RuleError as error:
+        if error.code != "insufficient_funds" or from_account == "savings":
+            raise
+        shortfall = error.detail.get("shortfall_cents", 0)
+        savings = ctx.kernel.db.execute("SELECT * FROM accounts WHERE account_id=?", (ctx.user_id + "-savings",)).fetchone()
+        if not savings or savings["balance_cents"] - savings["reserved_cents"] < shortfall:
+            raise
+        top_up = -(-shortfall // 10000) * 10000  # 向上取整到百元
+        top_up = min(top_up, savings["balance_cents"] - savings["reserved_cents"])
+        trace.append(step("tool", f"余额不足：差 {yuan(shortfall)}，储蓄账户可用 {yuan(savings['balance_cents'] - savings['reserved_cents'])}", "warned"))
+        raise NeedChoice(f"{error.message} 可以先从储蓄账户（尾号{savings['tail']}）转入，再完成这笔转账。", "recovery", [
+            {"label": f"先从储蓄账户转入 {yuan(top_up)}", "value": "top_up", "hint": "两步：① 账户互转（黄档）② 再转账",
+             "tool": "move_funds", "args": {"amount": top_up / 100, "direction": "savings_to_main"},
+             "then": f"给{contact['name']}转{yuan(cents)}", "selections": {"amount_cents": top_up}},
+            {"label": f"直接从储蓄账户付这 {yuan(cents)}", "value": "pay_from_savings", "hint": "付款账户改为储蓄账户",
+             "tool": "transfer", "args": dict(payee=payee, amount=amount, when=when, repeat=repeat, memo=memo, from_account="savings")},
+            {"label": "先不转了", "value": "cancel", "hint": ""}])
     pending = result["pending"]
     trace.append(step("tier", result["tier_reason"], "pending", {"tier": result["tier"]}))
     if result.get("risk"):
@@ -361,3 +386,106 @@ def transfer_to_human(ctx, summary=""):
                          actor="agent", turn_id=ctx.turn_id)
     return ToolOutcome({"status": "created", "ticket_id": ticket, "note": "模拟人工客服会在工作时间联系用户"},
                        blocks=[{"type": "handover", "data": {"ticket_id": ticket, "summary": (summary or "用户请求人工服务")[:100], "status": "waiting"}}])
+
+
+# ---------------------------------------------------------------------------------------------- 写操作：账户互转、撤回、AA
+@tool("move_funds", "本人账户之间转账，例如“从储蓄账户转5000到活期”。只生成待确认单。",
+      {"amount": {"type": "number", "description": "金额（元），用户说出的数"},
+       "direction": {"type": "string", "enum": ["savings_to_main", "main_to_savings"], "description": "savings_to_main=储蓄账户转入活期储蓄卡"}},
+      ["amount", "direction"], write=True)
+def move_funds(ctx, amount=None, direction="savings_to_main", then=None):
+    trace = []
+    cents = _check_amount(ctx, amount, trace)
+    src, dst = ("-savings", "-main") if direction == "savings_to_main" else ("-main", "-savings")
+    params = {"source_account_id": ctx.user_id + src, "target_account_id": ctx.user_id + dst, "amount_cents": cents}
+    if then:
+        params["then"] = then[:40]
+    result = ctx.kernel.propose(ctx.user_id, "move_funds", params, turn_id=ctx.turn_id, provenance={"amount": "user_text"})
+    trace.append(step("tier", result["tier_reason"], "pending"))
+    return ToolOutcome(pending_for_model(result["pending"]), pending=result["pending"], trace=trace)
+
+
+@tool("revoke_transfer", "撤回一笔还没到账的延时到账转账（用户说“撤回刚才那笔”）。只生成待确认单。",
+      {"payee": {"type": "string", "description": "可选：用户说的收款人，用于区分多笔在途转账"}}, write=True)
+def revoke_transfer(ctx, payee=None, transfer_id=None):
+    rows = ctx.kernel.db.execute("SELECT * FROM transfers WHERE user_id=? AND status='in_transit' ORDER BY created_at DESC",
+                                 (ctx.user_id,)).fetchall()
+    if transfer_id:
+        rows = [r for r in rows if r["transfer_id"] == transfer_id]
+    elif payee:
+        named = [r for r in rows if payee in r["payee_name"] or r["payee_name"] in payee]
+        rows = named or rows
+    if not rows:
+        raise RuleError("not_found", "现在没有可以撤回的在途转账（只有选择了延时到账、还没到账的转账才能撤回）。")
+    row = rows[0]
+    result = ctx.kernel.propose(ctx.user_id, "revoke_transfer", {"transfer_id": row["transfer_id"]}, turn_id=ctx.turn_id)
+    return ToolOutcome(pending_for_model(result["pending"]), pending=result["pending"],
+                       trace=[step("tier", result["tier_reason"], "pending")])
+
+
+@tool("aa_collect", "发起 AA 收款：用户说一起吃饭/活动花了多少钱、和谁 AA。人均由系统计算，只生成待确认单。",
+      {"total_amount": {"type": "number", "description": "总金额（元），用户说出的数"},
+       "participants": {"type": "array", "items": {"type": "string"}, "description": "用户说的一起分摊的人（称呼/姓名），不含用户自己"},
+       "include_self": {"type": "boolean", "description": "用户自己是否也分摊一份，默认 true"},
+       "memo": {"type": "string", "description": "用途，如“昨晚聚餐”"}},
+      ["total_amount", "participants"], write=True)
+def aa_collect(ctx, total_amount=None, participants=None, include_self=True, memo=None):
+    trace = []
+    total = _check_amount(ctx, total_amount, trace, field="总金额")
+    ids, names = [], []
+    for who in (participants or [])[:10]:
+        if not ctx.mentions(who):
+            trace.append(provenance_step("AA 对象", False, f"“{who}”不在用户原话里"))
+            raise RuleError("provenance", "AA 的对象必须是你本人说的人，请告诉我和谁一起分摊。")
+        matches = [m for m in resolvers.contact_matches(ctx.kernel, ctx.user_id, who) if m["is_contact"]]
+        if not matches:
+            raise RuleError("not_found", f"联系人里没有“{who}”。")
+        if len(matches) > 1:
+            chosen = ctx.selections.get("aa:" + who)
+            match = next((m for m in matches if m["contact_id"] == chosen), None)
+            if match is None:
+                raise NeedChoice(f"“{who}”有 {len(matches)} 位，是哪一位？", "aa:" + who,
+                                 [{"label": m["display"], "value": m["contact_id"], "hint": m["relation"]} for m in matches])
+            matches = [match]
+        ids.append(matches[0]["contact_id"])
+        names.append(matches[0]["name"])
+    if not ids:
+        raise RuleError("need_info", "和谁一起 AA？")
+    trace.append(provenance_step("AA 对象", True, "、".join(names)))
+    memo_text = memo.strip()[:20] if memo and ctx.mentions(memo.strip()[:20]) else None
+    params = {"total_cents": total, "contact_ids": ids, "include_self": include_self is not False}
+    if memo_text:
+        params["memo"] = memo_text
+    result = ctx.kernel.propose(ctx.user_id, "aa_collect", params, turn_id=ctx.turn_id,
+                                provenance={"total": "user_text", "per_person": "代码计算（总额 ÷ 人数）"})
+    trace.append(step("resolver", f"人均由代码计算：{yuan(total)} ÷ {len(ids) + (1 if include_self is not False else 0)} 人", "pass"))
+    trace.append(step("tier", result["tier_reason"], "pending"))
+    return ToolOutcome(pending_for_model(result["pending"]), pending=result["pending"], trace=trace)
+
+
+@tool("list_aa_requests", "查看 AA 收款：我发起的和别人发给我的。")
+def list_aa_requests(ctx):
+    from ..core.ops_more import aa_requests_for
+    items = aa_requests_for(ctx.kernel, ctx.user_id)
+    return ToolOutcome({"items": [{"from": i["from_name"], "payer": i["payer_name"], "amount": yuan(i["amount_cents"]), "memo": i["memo"],
+                                   "status": i["status"], "direction": i["direction"]} for i in items[:10]]},
+                       blocks=[{"type": "aa_request", "data": i} for i in items[:6]])
+
+
+@tool("pay_aa", "支付别人发给我的 AA 收款请求（用户说“付一下AA”）。只生成待确认单。",
+      {"from_name": {"type": "string", "description": "可选：发起人姓名"}}, write=True)
+def pay_aa(ctx, from_name=None, aa_id=None):
+    from ..core.ops_more import aa_requests_for
+    items = [i for i in aa_requests_for(ctx.kernel, ctx.user_id) if i["direction"] == "incoming" and i["status"] == "open"]
+    if aa_id:
+        items = [i for i in items if i["request_id"] == aa_id]
+    elif from_name:
+        items = [i for i in items if from_name in i["from_name"]] or items
+    if not items:
+        raise RuleError("not_found", "现在没有待你支付的 AA 收款。")
+    result = ctx.kernel.propose(ctx.user_id, "aa_pay", {"aa_id": items[0]["request_id"]}, turn_id=ctx.turn_id)
+    return ToolOutcome(pending_for_model(result["pending"]), pending=result["pending"],
+                       trace=[step("tier", result["tier_reason"], "pending")])
+
+
+from . import tools_more  # noqa: E402,F401  注册其余工具

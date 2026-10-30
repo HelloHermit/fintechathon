@@ -4,14 +4,15 @@
 
 ## 当前状态
 
-- 正在做：A4 转账全套（AA、延时到账撤回、余额不足恢复）→ A5 → A6 → A7
-- 下一步：卡片 / 订阅 / 理财工具（A7），生日计划（A8）
-- 预计到达的检查点：CP1（10-31 12:00）的后端部分已就绪，B 可以连真实接口
+- 正在做：A8 生日提醒 → 计划模板 → DAG 计划引擎（`plans`、`plan/control`、`insight_accept`）
+- 下一步：A9 决策链/审计补全，A10 沙箱分析，A11 录制回放 + 算法说明
+- 预计到达的检查点：CP2（10-31 22:00）的转账、账单、订阅、卡片、理财后端都已可用
 
 ## 已完成（附验证方式与结果）
 
 | 时间 | 步骤 | 内容 | 怎么验证的 | 结果 |
 |---|---|---|---|---|
+| 10-30 21:50 | A4–A7 | **转账全套**：手机号目录、按用途找收款人（“房租”→李建国，给出“按上次 ¥4,500”选项）、重名选项、定时与每月转账、AA（人均由代码算；王磊视角收到通知并支付）、延时到账与撤回、余额不足 → “先从储蓄账户转入”两步恢复；**反诈/守卫/溯源/熔断**（A5，已在 A1 落地，补了测试）；**账单**：分类统计、流水搜索、异常识别、月报年报、资金预估（“下个月房租交得起吗”）；**卡片**：查询、开虚拟卡（黄）、限额下调（黄）/上调（红）、冻结（黄）/解冻（红）、“我卡丢了”给“临时冻结 / 正式挂失”两个选项、挂失与解挂（红）；**订阅**：查询（黄档确认后出名单）、自动识别读书App、涨价/闲置/7 天内续费标记、取消后不再扣费；**理财**：产品列表/对比/推荐（标注是否适合）、风险测评问卷与计分定级（黄）、适当性拦截、申购（红）、赎回（黄）、持仓收益；quick-intent 与卡片按钮（block_action）、问卷提交（form_submit）、提醒入口（insight_accept：续费/异常/房租） | ① `python -m unittest tests.test_v2_engine tests.test_v2_scenarios`；② 真实 deepseek-flash 跑 25 句（六场景 + 超范围 + 闲聊） | ① 53 项全部通过；② 修复后 25 句均调用了正确的工具并得到正确的卡片/待确认单。修复过程中发现并解决：模型模仿历史里的“系统记录”文字、不调用工具就声称“确认单已生成”（现在事实校验会拦，并要求模型先调用工具再答一次） |
 | 10-30 21:35 | A1–A3 | **后端可连**：`python run.py` 启动；`/api/v2/` 下 session、home、chat、confirm、cancel、pending/revise、strong-auth/send-otp、strong-auth/verify、sim-phone、notifications、accounts、transactions、reports/monthly、reports/annual、cards、products、holdings、scheduled、audit、turns/{id}、demo/advance-clock、demo/reset、demo/switch-user 已实现；`action` 目前只支持 `option_select`，`quick-intent`、`plan/control`、`plans` 返回“开发中”（A7/A8 补）。rich 种子、演示时钟、调度器（定时转账、延时到账、订阅扣费）、红档强验证（交易密码 + 模拟短信动态码，3 次失败锁 10 分钟、持久化）、审计哈希链、参数溯源、输入守卫、事实校验、异常识别、月报年报 | ① 新单测 `python -m unittest tests.test_v2_engine`；② 真实 DeepSeek 跑 10 句口语；③ curl 走一遍 HTTP 红档流程 | ① 39 项全部通过（4.4 秒）；② 10 句里 10 句行为正确（见下方“真实模型验证”）；③ 红档：生成单 → 发动态码 → 模拟手机收到“向 刘芳 转账 2,000.00 元” → 交易密码 + 动态码 → 回执；审计链校验通过 |
 | 10-30 21:20 | A0 | 读 PLAN / API_V2 / SEED；恢复丢失的 `docs/sprint/`；跑旧测试基线 | `python -m unittest discover -s tests -p 'test_*.py'` | 293 项：除 `test_docker_isolation_independent` 的 setUpClass 报错（需要 Docker 运行时，云端没有，属预期）外全部通过，跳过 2 项，耗时 127 秒 |
 
@@ -40,18 +41,23 @@
 - 新演示库默认放在 `data/demo.db`（与旧的 `data/bank.db` 分开，互不影响）。
 - 演示种子的最终数值（SEED 里写“约”的部分）：alice 流水 953 笔（2025-10-01 06:30 至 2026-10-29），bob 187 笔；随机流水里同商户同金额 10 分钟内的重复会被去掉，保证只有 A2 一处“重复扣款”。alice 储蓄卡“近 90 天转账中位数”约 ¥2,750（房租与生活费）。
 - 风险测评：alice 存了一条 2025-09-01 的 C2 记录，有效期到 2026-09-01，已过期（= SEED 的“无有效测评”）。
+- 理财申购、赎回、预算锁定、本人账户互转都是本人资金，不计入“当日对外转账累计”；账单统计也不把它们算作消费（分类“理财申购”“理财赎回”“账户互转”）。
+- “拒绝 AA”不动资金，直接生效并审计，不出确认单。
+- 输入里明显是办理/查询业务（转、卡、订阅、理财、账单……）而模型一个工具都没调用时，代码会要求模型调用工具后重答一次（只重试一次）。
 - 模型调用默认关闭 DeepSeek 的“思考”模式（`thinking: disabled`），实测单步从约 2.1 秒降到约 1.2 秒，工具调用结果一致。可用环境变量 `FINTECH_MODEL_THINKING=enabled` 打开。
 
 ## 需要对方做的
 
 - （给 B）后端已经可以连了：`python run.py`（默认 http://127.0.0.1:8765，演示库 `data/demo.db`，`--reset` 重置）。云端会话里 `FINTECH_MODEL_API_KEY` 填任意占位值即可。接口增补见 API_V2.md 第 5 节（只加不改）。
 - （给 B）`GET /` 现在返回 `src/web_assets/index.html`，那还是旧版 v1 页面；你们换成新前端后就会生效，`/assets/<路径>` 自动白名单（新增文件不用重启）。
+- （已处理 B 的留言 3–9，10-30 21:50）quick-intent 意图名定稿并加了别名（`cancel_card_lost`、`pay_aa_request`、`decline_aa_request`）；Notification 加 `ref`；Home 加 `aa_requests`；失效单 `error.code="expired"`；环比统一为“上月同期”；事实校验改写为和本轮卡片相关的一句话。详见 API_V2.md 5.2。
 - （已处理 B 的留言）`tests/run_context_live_acceptance.py`、`tests/run_six_live_acceptance.py` 里的旧文档路径已改成 `docs/history/…`。
 
 ## 接口变更（只有会话 A 写）
 
 | 时间 | 改动 | 是否兼容 |
 |---|---|---|
+| 10-30 21:50 | API_V2 第 5.2 节：quick-intent 意图表定稿（含别名）、Notification.ref、Home.aa_requests、失效单错误码 `expired`、环比口径、事实校验纠正文案 | 兼容（只加不改） |
 | 10-30 21:35 | API_V2 第 5.1 节：新增 `GET /api/v2/pending`；允许多张待确认单并存（同一对象才作废旧单）；`error.reason/detail`；send-otp 60 秒内重发返回 429；`receipt.status=scheduled`；Insight / Report / Scheduled 多带若干字段 | 兼容（只加不改） |
 
 ## 给队长的话（需要人来做的事）

@@ -90,6 +90,15 @@ class Kernel:
             self.questionnaires.clear()
             self._open()
 
+    def close(self):
+        try:
+            self.db.close()
+        except Exception:
+            pass
+
+    def __del__(self):
+        self.close()
+
     def _meta(self, key):
         row = self.db.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
         return row[0] if row else None
@@ -235,15 +244,15 @@ class Kernel:
         return self.locked_until(user_id, "suspicious")
 
     # ------------------------------------------------------------------ 通知与模拟短信
-    def notify(self, user_id, kind, title, body):
-        self.db.execute("INSERT INTO notifications VALUES(?,?,?,?,?,?,0)",
-                        (new_id("n"), user_id, iso(self.now()), kind, title, body))
+    def notify(self, user_id, kind, title, body, ref=None):
+        self.db.execute("INSERT INTO notifications VALUES(?,?,?,?,?,?,0,?)",
+                        (new_id("n"), user_id, iso(self.now()), kind, title, body, ref))
 
     def notifications(self, user_id, limit=50):
         rows = self.db.execute("SELECT * FROM notifications WHERE user_id=? ORDER BY time DESC, rowid DESC LIMIT ?",
                                (user_id, limit)).fetchall()
         return [{"id": r["notification_id"], "time": r["time"], "kind": r["kind"], "title": r["title"],
-                 "body": r["body"], "read": bool(r["read"])} for r in rows]
+                 "body": r["body"], "read": bool(r["read"]), "ref": r["ref"]} for r in rows]
 
     def sms_inbox(self, user_id):
         rows = self.db.execute("SELECT * FROM sms WHERE user_id=? ORDER BY received_at DESC, rowid DESC LIMIT 30",

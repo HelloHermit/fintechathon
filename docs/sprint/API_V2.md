@@ -231,3 +231,33 @@ PlanSummary = 只含 `plan_id,title,status,created_at,node_count,done_count`。
 - `Session` 多带 `"simulated": true`。
 - `GET /api/v2/transactions` 多返回 `total_count`；不带 `from` 时默认从 2025-01-01 起。
 - 演示交易密码 `135790`；动态码只出现在 `GET /api/v2/sim-phone`。
+
+### 5.2 2026-10-30 · v2.0.2（回应 status-B 第 3–9 条）
+
+- **quick-intent 意图名（定稿）**，`POST /api/v2/quick-intent` `{"intent", "params"}`，全部走代码判档与确认，返回 TurnResponse（带 `pending`）：
+  | intent | params | 档位 |
+  |---|---|---|
+  | `query_subscriptions` | `{}` | 黄 |
+  | `cancel_subscription` | `subscription_id` | 黄 |
+  | `freeze_card` | `card_id` | 黄 |
+  | `unfreeze_card` | `card_id` | 红 |
+  | `report_card_lost` | `card_id` | 红 |
+  | `restore_card`（别名 `cancel_card_lost`） | `card_id` | 红 |
+  | `set_card_limit` | `card_id, daily_limit_cents` | 下调黄 / 上调红 |
+  | `apply_virtual_card` | `purpose?`, `daily_limit_cents?` | 黄 |
+  | `redeem_product` | `product_id, amount_cents`（或 `"all"`） | 黄 |
+  | `purchase_product` | `product_id, amount_cents` | 红（先过适当性） |
+  | `revoke_transfer` | `transfer_id`（= Scheduled 里 `revocable` 那条的 `schedule_id`） | 黄 |
+  | `pay_aa_request`（别名 `pay_aa`） | `request_id` | 按当日累计黄/红 |
+  | `decline_aa_request` | `request_id` | 不动资金，直接生效（无确认单） |
+  | `cancel_scheduled` | `schedule_id` | 黄 |
+  | `start_risk_assessment` | `{}` | 绿：返回 `risk_questionnaire` 卡片 |
+  | `detect_anomalies` | `{}` | 绿：返回 `anomaly_list` 卡片 |
+  | `mark_normal` | `finding_id` | 绿：标记“这笔是我本人的”，之后不再提醒 |
+  不认识的 intent 返回 TurnResponse，`error.code="invalid_request"`（HTTP 200）。`block_action` 的 `value={"intent","params"}` 用同一张表。
+- **Notification 加可选字段 `ref`**：`kind=aa_request` 时是 AA 请求编号（给 `pay_aa_request` / `decline_aa_request` 用）。
+- **Home 加字段 `aa_requests`**：当前用户待支付的 AA（`[{request_id, from_name, payer_name, amount_cents, memo, status:"open", direction:"incoming"}]`），王磊视角首页可以直接放“去支付”按钮。
+- **确认单失效的错误码**：`/confirm`、`/cancel`、`/strong-auth/verify`、`/pending/revise` 都是 HTTP 200 + TurnResponse；单子已过期、已执行、已取消、找不到时 `error.code="expired"`（细分原因在 `error.reason`：`expired` / `duplicate` / `not_found`）。锁定 `locked`，其余 `invalid_request`。`/strong-auth/send-otp` 不是 TurnResponse：单子失效时 HTTP 400 + `{"error":{"code":"expired",…}}`，60 秒内重发 HTTP 429。
+- **环比口径统一为“上月同期”**：`spending_breakdown.compare` 和月报 KPI 的“环比”都比较“本月 1 日至今”与“上月 1 日至同一天”；过去的完整月份就是上月全月。月报 KPI 的 `delta` 文字写成“+59.8% 环比（上月同期）”。
+- **事实校验纠正后的回复**改为根据本轮卡片生成的一句话（例如“这段时间总支出 ¥16,575.71，最多的是购物 ¥7,346.00。”）；本轮没有任何工具结果时，回复“需要先查数据……不展示没有核实过的数字”，不再换成无关的能力介绍。另外：模型没调用工具就给出事实数字时，会被要求先调用工具再回答一次（决策链里有一条 `fact_check: warned`）。
+- `Report.period` 是对象 `{"from","to","label"}`。

@@ -133,7 +133,7 @@ class Analytics:
     # ------------------------------------------------------------------ 分类统计
     def _expenses(self, user_id, start, end):
         return self.db.execute("""SELECT category, amount_cents FROM transactions WHERE user_id=? AND time>=? AND time<?
-            AND status IN ('success','in_transit') AND amount_cents<0""", (user_id, iso(start), iso(end))).fetchall()
+            AND status IN ('success','in_transit') AND amount_cents<0 AND category NOT IN ('账户互转','理财申购','理财赎回')""", (user_id, iso(start), iso(end))).fetchall()
 
     def breakdown(self, user_id, start, end):
         rows = self._expenses(user_id, start, end)
@@ -145,7 +145,14 @@ class Analytics:
         categories = [{"name": name, "amount_cents": cents, "share": round(cents / total, 4) if total else 0, "count": counts[name]}
                       for name, cents in sorted(sums.items(), key=lambda kv: kv[1], reverse=True)]
         span = end - start
-        prev_rows = self._expenses(user_id, start - span, start)
+        if start.day == 1 and start.hour == 0 and span <= timedelta(days=31):
+            # 按自然月比较：本月 1 日至今 对比 上月 1 日至同一天（环比）
+            py, pm = add_months(start.year, start.month, -1)
+            prev_start, prev_month_end = month_bounds(py, pm)
+            prev_end = min(prev_start + span, prev_month_end)
+        else:
+            prev_start, prev_end = start - span, start
+        prev_rows = self._expenses(user_id, prev_start, prev_end)
         prev_total = -sum(r["amount_cents"] for r in prev_rows)
         change = round((total - prev_total) * 100 / prev_total, 1) if prev_total else None
         return {"period": {"from": iso(start), "to": iso(end)}, "total_cents": total, "categories": categories,
@@ -243,7 +250,7 @@ class Analytics:
     # ------------------------------------------------------------------ 月报 / 年报（PLAN L4、L5）
     def _income(self, user_id, start, end):
         return self.db.execute("""SELECT COALESCE(SUM(amount_cents),0) FROM transactions WHERE user_id=? AND time>=? AND time<?
-            AND status='success' AND amount_cents>0""", (user_id, iso(start), iso(end))).fetchone()[0]
+            AND status='success' AND amount_cents>0 AND category NOT IN ('账户互转','理财申购','理财赎回')""", (user_id, iso(start), iso(end))).fetchone()[0]
 
     def monthly_report(self, user_id, month):
         now = self.k.now()
@@ -256,7 +263,7 @@ class Analytics:
         prev = self.breakdown(user_id, ps, pe)
         income = self._income(user_id, start, end)
         expense = data["total_cents"]
-        change = round((expense - prev["total_cents"]) * 100 / prev["total_cents"], 1) if prev["total_cents"] else None
+        change = data["compare"]["change_pct"]  # 与 spending_breakdown 同一口径：上月同期
         subs = -self.db.execute("""SELECT COALESCE(SUM(amount_cents),0) FROM transactions WHERE user_id=? AND time>=? AND time<?
             AND category='订阅会员' AND amount_cents<0""", (user_id, iso(start), iso(end))).fetchone()[0]
         findings = [f for f in self.anomalies(user_id, now, days=400) if start <= parse_iso(f["time"]) < end]
@@ -276,7 +283,7 @@ class Analytics:
                     {"title": "订阅支出", "bullets": [f"本月订阅会员合计 {yuan(subs)}"]}]
         return {"kind": "monthly", "period": {"from": iso(start), "to": iso(end), "label": f"{y}年{m}月"},
                 "kpis": [{"label": "总支出", "value": yuan(expense), "value_cents": expense,
-                          "delta": (f"{'+' if change > 0 else ''}{change}% 环比" if change is not None else "")},
+                          "delta": (f"{'+' if change > 0 else ''}{change}% 环比（上月同期）" if change is not None else "")},
                          {"label": "总收入", "value": yuan(income), "value_cents": income, "delta": ""},
                          {"label": "结余", "value": yuan(income - expense), "value_cents": income - expense, "delta": ""},
                          {"label": "异常交易", "value": f"{len(findings)} 处", "value_cents": None, "delta": ""}],

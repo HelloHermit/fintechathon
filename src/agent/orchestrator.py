@@ -4,6 +4,7 @@
 """
 
 import json
+import re
 import threading
 import time
 from datetime import timedelta
@@ -17,6 +18,8 @@ from .prompts import build_system
 MAX_STEPS = 6
 HISTORY_LIMIT = 12
 TASK_TEXT_LIMIT = 4
+BUSINESS_HINT = re.compile(r"转账|转[0-9一二两三四五六七八九十百千万]|AA|冻|挂失|解挂|限额|虚拟卡|订阅|自动扣费|续费|会员|申购|买|赎回|理财|持仓|"
+                          r"账单|花了|花在|支出|收入|余额|流水|我的卡|哪些卡|异常|报告|年报|月报|撤回|房租|工资|测评|定时")
 DEFAULT_SUGGESTIONS = ["这个月花了多少钱？", "帮我看看有没有异常扣款", "我有哪些卡", "给小王转200"]
 
 
@@ -41,6 +44,8 @@ class Agent:
     def _task_texts(self, user_id, text=None):
         mem = self._mem(user_id)
         now = self.kernel.now()
+        if text is not None and not mem.get("keep_task", False):
+            mem["task"] = []
         mem["task"] = [(t, at) for t, at in mem["task"] if now - at <= timedelta(minutes=15)][-TASK_TEXT_LIMIT:]
         if text is not None:
             mem["task"].append((text, now))
@@ -50,11 +55,14 @@ class Agent:
     def end_task(self, user_id):
         self._mem(user_id)["task"] = []
 
-    def _remember(self, user_id, text, reply, note=""):
+    def _remember(self, user_id, text, reply, note="", keep_task=False):
+        """历史只存用户原话和助手回复（不存系统记录，避免模型模仿“已生成确认单”之类的文字）。
+        keep_task：本轮留下了待确认单、选项或追问，下一句可能是补充，保留任务上下文；否则任务结束。"""
         mem = self._mem(user_id)
         mem["history"].append({"role": "user", "content": text})
-        mem["history"].append({"role": "assistant", "content": reply + (f"\n（系统记录：{note}）" if note else "")})
+        mem["history"].append({"role": "assistant", "content": reply})
         mem["history"] = mem["history"][-HISTORY_LIMIT:]
+        mem["keep_task"] = keep_task
 
     # ------------------------------------------------------------------ 响应
     def response(self, turn_id, text, blocks=None, pending=None, plan=None, suggestions=None, trace=None,
@@ -127,6 +135,7 @@ class Agent:
         specs = tools.tool_specs()
         blocks, evidence, pending, choice, receipts, tool_notes = [], [text], None, None, [], []
         cancelled = False
+        nudged = False
         reply = ""
         for step_index in range(MAX_STEPS):
             final_call = pending is not None or choice is not None
@@ -150,6 +159,19 @@ class Agent:
                                     result.get("ms", 0)))
             if not calls:
                 reply = (result["content"] or "").strip()
+                if not tool_notes and not nudged and step_index + 1 < MAX_STEPS:
+                    ok_first, problems_first = factcheck.check(reply, evidence, completed=False, pending_created=False)
+                    if ok_first and BUSINESS_HINT.search(text) and not reply.rstrip().endswith(("？", "?")):
+                        ok_first, problems_first = False, ["业务请求没有调用工具"]
+                    if not ok_first:
+                        # 模型没调用任何工具就给出了事实性内容或“已生成确认单”：提醒一次，让它调用工具
+                        nudged = True
+                        trace.append(tools.step("fact_check", "模型未调用工具就回答了事实性内容，要求其调用工具后重答", "warned",
+                                                {"problems": problems_first[:3]}))
+                        messages.append({"role": "assistant", "content": reply})
+                        messages.append({"role": "user", "content": "（系统提示：你刚才没有调用任何工具，回复里的数字或“确认单已生成”没有依据。请调用合适的工具后再回答我上一句话。）"})
+                        reply = ""
+                        continue
                 break
             messages.append({"role": "assistant", "content": result["content"] or "",
                              "tool_calls": [{"id": c["id"], "type": "function", "function": {"name": c["name"], "arguments": c["arguments"]}} for c in calls]})
@@ -182,7 +204,8 @@ class Agent:
             evidence.append(json.dumps(pending["lines"], ensure_ascii=False) + pending["title"])
         for block in blocks:
             evidence.append(json.dumps(block, ensure_ascii=False))
-        ok, problems = factcheck.check(reply, evidence, completed=bool(receipts), cancelled=cancelled)
+        ok, problems = factcheck.check(reply, evidence, completed=bool(receipts), cancelled=cancelled,
+                                       pending_created=pending is not None)
         fact = "pass"
         if not reply or not ok:
             fact = "corrected" if reply else "pass"
@@ -198,11 +221,14 @@ class Agent:
         if pending is None and choice is None and not any(b["type"] == "note" for b in blocks):
             pass
         note = "；".join(tool_notes)
-        self._remember(user_id, text, reply, note)
+        asked = reply.rstrip().endswith(("？", "?"))
+        self._remember(user_id, text, reply, note, keep_task=bool(pending or choice or asked or any(
+            '"need_info"' in e or '"provenance"' in e for e in evidence)))
         return self.response(ctx.turn_id, reply, blocks, pending=pending, trace=trace, fact_check=fact,
                              suggestions=self._suggest(blocks, pending), user_id=user_id)
 
     def _template_reply(self, pending, choice, blocks):
+        """事实校验不通过时的代码模板：内容只来自本轮的卡片和确认单。"""
         if pending:
             if pending["tier"] == "red":
                 return f"已为你生成“{pending['title']}”的待确认单。这是红档操作，请核对后输入交易密码和短信动态码完成验证。"
@@ -210,11 +236,12 @@ class Agent:
         if choice:
             return choice["data"]["prompt"]
         for block in blocks:
-            if block["type"] == "note":
-                return block["data"]["text"]
+            text = block_summary(block)
+            if text:
+                return text
         if blocks:
             return "结果在下方卡片里。"
-        return "我可以帮你办理转账、查账单、理财、卡片和订阅等业务，请问需要什么？"
+        return "这个问题需要先查数据才能准确回答，我不展示没有核实过的数字。你可以换个说法再问一次，比如“这个月花了多少钱”“查一下余额”。"
 
     def _suggest(self, blocks, pending):
         types = {b["type"] for b in blocks}
@@ -244,7 +271,8 @@ class Agent:
                     pending = next((p for p in self.kernel.open_pendings(user_id) if p["request_id"] == args[0]), None) if args else None
                 resp = self.response(turn_id, error.message, [{"type": "note", "data": {"text": error.message, "tone": tone}}],
                                      pending=pending, trace=trace, user_id=user_id,
-                                     error={"code": error.code if error.code in ("locked", "rate_limited") else "invalid_request",
+                                     error={"code": error.code if error.code in ("locked", "rate_limited") else
+                                            "expired" if error.code in ("expired", "duplicate", "not_found") else "invalid_request",
                                             "message": error.message, "reason": error.code, **({"detail": error.detail} if error.detail else {})})
                 return self._finish(user_id, turn_id, "[确认操作]", resp)
             if result.get("status") == "pending":
@@ -254,7 +282,7 @@ class Agent:
                     trace=[tools.step("tier", result["tier_reason"], "pending")], user_id=user_id))
             if result.get("status") == "cancelled":
                 self.end_task(user_id)
-                self._mem(user_id)["history"].append({"role": "assistant", "content": f"（用户在界面上取消了：{result['title']}）"})
+                self._mem(user_id)["history"].append({"role": "assistant", "content": f"好的，已取消：{result['title']}。"})
                 return self._finish(user_id, turn_id, "[取消]", self.response(
                     turn_id, f"好的，已取消：{result['title']}。", trace=[tools.step("tool", "用户取消待确认单", "success")],
                     suggestions=DEFAULT_SUGGESTIONS[:3], user_id=user_id))
@@ -269,7 +297,7 @@ class Agent:
                      tools.step("tool", "执行前复查余额、归属、累计、重复请求：通过", "success"),
                      tools.step("audit", f"成功审计已写入（与业务修改同一事务），哈希 {result.get('audit_hash', '')[:12]}…", "success")]
             text = result.get("summary", "办理成功。")
-            self._mem(user_id)["history"].append({"role": "assistant", "content": f"（系统记录：用户已确认并执行成功：{text}）"})
+            self._mem(user_id)["history"].append({"role": "assistant", "content": text})
             plan = result.get("plan")
             return self._finish(user_id, turn_id, "[确认]", self.response(turn_id, text + "。" if not text.endswith("。") else text,
                                                                            blocks, plan=plan, trace=trace, user_id=user_id,
@@ -298,6 +326,85 @@ class Agent:
         with self.user_lock(user_id):
             return handler(user_id, plan_id, action)
 
+    # ------------------------------------------------------------------ 页面按钮
+    def _quick_intent(self, user_id, intent, params, turn_id=None, label=None):
+        turn_id = turn_id or new_id("t")
+        trace = [tools.step("guard", f"页面按钮发起：{label or intent}（不经过模型）", "pass")]
+        if intent == "mark_normal":
+            fid = params.get("finding_id")
+            if type(fid) is not str or len(fid) > 80:
+                return self.response(turn_id, "参数无效。", error={"code": "invalid_request", "message": "参数无效"}, user_id=user_id)
+            with self.kernel.tx():
+                self.kernel.db.execute("INSERT OR REPLACE INTO anomaly_marks VALUES(?,?,?,?)", (user_id, fid, "normal", iso(self.kernel.now())))
+                self.kernel.audit(user_id, "mark_normal", "green", "anomaly_marked", "success", "用户标记为本人交易", turn_id=turn_id,
+                                  params={"finding_id": fid})
+            return self.response(turn_id, "好的，已标记为你本人的交易，之后不再提醒。", trace=trace, user_id=user_id)
+        if intent == "decline_aa_request":
+            from ..core.ops_more import decline_aa
+            try:
+                row = decline_aa(self.kernel, user_id, str(params.get("request_id") or params.get("aa_id") or "")[:80], turn_id)
+            except RuleError as error:
+                return self.response(turn_id, error.message, error={"code": "expired", "message": error.message}, user_id=user_id)
+            return self.response(turn_id, f"好的，已婉拒这笔 {yuan(row['amount_cents'])} 的 AA，没有动用资金。", trace=trace, user_id=user_id)
+        if intent == "start_risk_assessment":
+            outcome = tools.run_tool("start_risk_assessment", {}, tools.TaskContext(self.kernel, user_id, [], turn_id=turn_id))
+            return self.response(turn_id, "请完成下面 6 道题，提交后系统计分定级。", outcome.blocks, trace=trace + outcome.trace, user_id=user_id)
+        if intent == "detect_anomalies":
+            outcome = tools.run_tool("detect_anomalies", {}, tools.TaskContext(self.kernel, user_id, [], turn_id=turn_id))
+            return self.response(turn_id, f"发现 {outcome.model_result['count']} 处需要留意的交易，详见下方。", outcome.blocks,
+                                 trace=trace + outcome.trace, user_id=user_id)
+        spec = QUICK_INTENTS.get(intent)
+        if spec is None:
+            return self.response(turn_id, "不支持的快捷操作。", error={"code": "invalid_request", "message": "未知操作"}, user_id=user_id)
+        kernel_intent, build = spec
+        try:
+            params_built = build(params)
+            result = self.kernel.propose(user_id, kernel_intent, params_built, turn_id=turn_id, actor="user",
+                                         provenance={"source": "用户在界面上点击"})
+        except (KeyError, TypeError):
+            return self.response(turn_id, "参数不完整。", error={"code": "invalid_request", "message": "参数不完整"}, user_id=user_id)
+        except RuleError as error:
+            trace.append(tools.step("tier", f"代码拒绝：{error.message}", "blocked", {"code": error.code}))
+            return self.response(turn_id, error.message, [{"type": "note", "data": {"text": error.message, "tone": "warning"}}],
+                                 trace=trace, user_id=user_id)
+        trace.append(tools.step("tier", result["tier_reason"], "pending", {"tier": result["tier"]}))
+        reply = self._template_reply(result["pending"], None, [])
+        return self._finish(user_id, turn_id, "[按钮]" + intent, self.response(turn_id, reply, pending=result["pending"], trace=trace, user_id=user_id))
+
+    def _action_block_action(self, user_id, ref, value):
+        if not isinstance(value, dict) or type(value.get("intent")) is not str or not isinstance(value.get("params", {}), dict):
+            return self.response(new_id("t"), "参数无效。", error={"code": "invalid_request", "message": "参数无效"}, user_id=user_id)
+        return self._quick_intent(user_id, value["intent"], value.get("params", {}), label=ref)
+
+    def _action_form_submit(self, user_id, ref, value):
+        turn_id = new_id("t")
+        owner = self.kernel.questionnaires.get(ref)
+        if owner != user_id or not isinstance(value, dict):
+            return self.response(turn_id, "问卷已失效，请重新开始测评。", error={"code": "invalid_request", "message": "问卷已失效"}, user_id=user_id)
+        try:
+            result = self.kernel.propose(user_id, "submit_risk_assessment", {"answers": value}, turn_id=turn_id, actor="user",
+                                         provenance={"answers": "用户在问卷上逐题选择"})
+        except RuleError as error:
+            return self.response(turn_id, error.message, [{"type": "note", "data": {"text": error.message, "tone": "warning"}}], user_id=user_id)
+        self.kernel.questionnaires.pop(ref, None)
+        trace = [tools.step("resolver", "问卷计分由代码完成：6 题各 1–5 分", "pass"), tools.step("tier", result["tier_reason"], "pending")]
+        return self._finish(user_id, turn_id, "[问卷]", self.response(turn_id, "测评结果已算好，请核对后点确认提交。", pending=result["pending"],
+                                                                      trace=trace, user_id=user_id))
+
+    def _action_insight_accept(self, user_id, ref, value):
+        kind = ref.split("-")[1] if ref.startswith("ins-") else ""
+        if kind == "birthday" and hasattr(self, "_accept_birthday"):
+            return self._accept_birthday(user_id, ref)
+        if kind == "renewal":
+            return self._quick_intent(user_id, "query_subscriptions", {}, label="查看订阅")
+        if kind == "anomaly":
+            return self._quick_intent(user_id, "detect_anomalies", {}, label="查看异常")
+        if kind == "rent":
+            from ..core import views
+            items = [s for s in views.scheduled(self.kernel, user_id) if s["status"] == "scheduled"]
+            return self.response(new_id("t"), "这是你已排定的定时任务。", [{"type": "scheduled_list", "data": {"items": items}}], user_id=user_id)
+        return _not_ready(self, user_id, "这个提醒")
+
     def select_option(self, user_id, ref, value):
         turn_id = new_id("t")
         with self.user_lock(user_id):
@@ -308,17 +415,72 @@ class Agent:
             if item is None:
                 return self.response(turn_id, "请从给出的选项里选择。", error={"code": "invalid_request", "message": "选项无效"})
             self.kernel.option_sets.pop(ref, None)
+            if value == "cancel":
+                self.end_task(user_id)
+                return self.response(turn_id, "好的，先不办了。", suggestions=DEFAULT_SUGGESTIONS[:3], user_id=user_id)
             selections = dict(entry.get("selections") or {})
             selections[entry["field"]] = value
+            selections.update(item.get("selections") or {})
             ctx = tools.TaskContext(self.kernel, user_id, entry["texts"], selections=selections, turn_id=turn_id)
-            outcome = tools.run_tool(entry["tool"], entry["args"], ctx)
+            tool_name, args = item.get("tool") or entry["tool"], dict(item.get("args") or entry["args"])
+            outcome = tools.run_tool(tool_name, args, ctx, internal={"then": item["then"]} if item.get("then") else None)
             if outcome.choice:
                 self.kernel.option_sets[outcome.choice["data"]["ref"]]["selections"] = selections
             trace = [tools.step("provenance", f"用户点选：{item['label']}", "pass")] + outcome.trace
             reply = self._template_reply(outcome.pending, outcome.choice, outcome.blocks)
-            self._mem(user_id)["history"].append({"role": "assistant", "content": f"（用户点选了“{item['label']}”）{reply}"})
+            self._mem(user_id)["history"].append({"role": "assistant", "content": reply})
+            self._mem(user_id)["keep_task"] = True
             return self._finish(user_id, turn_id, "[点选]", self.response(turn_id, reply, outcome.blocks, pending=outcome.pending,
                                                                           trace=trace, user_id=user_id))
+
+
+QUICK_INTENTS = {
+    # 页面按钮直接发起：参数来自用户本人在界面上的点击，不经过模型；照样走代码判档与确认。
+    "query_subscriptions": ("query_subscriptions", lambda p: {}),
+    "cancel_subscription": ("cancel_subscription", lambda p: {"subscription_id": p["subscription_id"]}),
+    "freeze_card": ("freeze_card", lambda p: {"card_id": p["card_id"]}),
+    "unfreeze_card": ("unfreeze_card", lambda p: {"card_id": p["card_id"]}),
+    "report_card_lost": ("report_card_lost", lambda p: {"card_id": p["card_id"]}),
+    "restore_card": ("restore_card", lambda p: {"card_id": p["card_id"]}),
+    "set_card_limit": ("set_card_limit", lambda p: {"card_id": p["card_id"], "daily_limit_cents": p["daily_limit_cents"]}),
+    "apply_virtual_card": ("apply_virtual_card", lambda p: {k: v for k, v in p.items() if k in ("purpose", "daily_limit_cents")}),
+    "redeem_product": ("redeem_product", lambda p: {"product_id": p["product_id"], "amount_cents": p["amount_cents"]}),
+    "purchase_product": ("purchase_product", lambda p: {"product_id": p["product_id"], "amount_cents": p["amount_cents"]}),
+    "revoke_transfer": ("revoke_transfer", lambda p: {"transfer_id": p["transfer_id"]}),
+    "pay_aa": ("aa_pay", lambda p: {"aa_id": p.get("aa_id") or p["request_id"]}),
+    "pay_aa_request": ("aa_pay", lambda p: {"aa_id": p.get("request_id") or p["aa_id"]}),
+    "cancel_card_lost": ("restore_card", lambda p: {"card_id": p["card_id"]}),
+    "cancel_scheduled": ("cancel_scheduled", lambda p: {"schedule_id": p["schedule_id"]}),
+}
+
+
+def block_summary(block):
+    """由代码根据卡片内容生成一句话（不经过模型）。"""
+    t, d = block["type"], block.get("data", {})
+    if t == "note":
+        return d.get("text")
+    if t == "spending_breakdown":
+        top = d["categories"][0] if d.get("categories") else None
+        return f"这段时间总支出 {yuan(d['total_cents'])}" + (f"，最多的是{top['name']} {yuan(top['amount_cents'])}" if top else "") + "。"
+    if t == "account_list":
+        return f"你名下 {len(d['accounts'])} 个账户，合计余额 {yuan(sum(a['balance_cents'] for a in d['accounts']))}。"
+    if t == "transaction_list":
+        return f"{d.get('title', '')}共 {d['total_count']} 笔，明细见下方。"
+    if t == "anomaly_list":
+        high = sum(1 for i in d["items"] if i["severity"] == "high")
+        return f"发现 {len(d['items'])} 处需要留意的交易" + (f"，其中 {high} 处高风险" if high else "") + "，详见下方。"
+    if t == "report":
+        kpi = d["kpis"][0]
+        return f"{d['period'].get('label', '')}账单报告已生成：{kpi['label']} {kpi['value']}。"
+    if t == "card_list":
+        return f"你名下有 {len(d['items'])} 张卡，详见下方。"
+    if t in ("product_list", "product_compare"):
+        return "产品信息见下方。理财非存款，产品有风险，投资须谨慎。"
+    if t == "holding_list":
+        return f"你有 {len(d['items'])} 笔理财持仓，累计收益 {yuan(sum(i['profit_cents'] for i in d['items']))}。"
+    if t == "risk_questionnaire":
+        return "请先完成下方 6 道风险测评题。"
+    return None
 
 
 def _not_ready(agent, user_id, what):

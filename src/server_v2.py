@@ -304,7 +304,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, k.send_otp(uid, self._str(body, "request_id")))
             except RuleError as error:
                 status = 429 if error.code == "rate_limited" else 400
-                return self._send(status, {"error": {"code": error.code, "message": error.message, **error.detail}})
+                code = "expired" if error.code in ("expired", "duplicate", "not_found") else error.code
+                return self._send(status, {"error": {"code": code, "message": error.message, "reason": error.code, **error.detail}})
         if route == "strong-auth/verify":
             if not set(body) <= {"request_id", "pin", "otp", "risk_acknowledged"}:
                 raise ValueError("fields")

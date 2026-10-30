@@ -32,7 +32,10 @@ def _date_parts(text):
     return parts
 
 
-def check(reply, evidence_texts, *, completed=False, cancelled=False):
+PENDING_CLAIM = re.compile(r"(确认单|待确认).{0,6}(已生成|生成了|已经生成|已创建)|已(为你|帮你)?生成.{0,12}(确认单|待确认)|请(你)?(在|到)?(界面|确认单)上?(点|点击)确认")
+
+
+def check(reply, evidence_texts, *, completed=False, cancelled=False, pending_created=True):
     """返回 (ok, problems)。evidence_texts：工具结果、确认单、用户原话等的文本。"""
     problems = []
     evidence = "\n".join(evidence_texts)
@@ -45,7 +48,9 @@ def check(reply, evidence_texts, *, completed=False, cancelled=False):
         allowed.add(float(round(value)))
         allowed.add(round(value / 10000, 2))  # “1.5 万”
         allowed.add(round(value / 10000, 1))
-    for value in _numbers(reply):
+    body = re.sub(r"(?m)^\s*[0-9]{1,2}[.、)）]\s*", "", reply or "")  # 列表序号“1. 2. 3.”不是事实数字
+    body = re.sub(r"第\s*[0-9]{1,2}|[0-9]{1,2}\s*(?:号|条|笔)?(?=[、和与及或])|P[0-9]{1,2}", "", body)  # “第2笔”“P1”是指代
+    for value in _numbers(body):
         if value in allowed or (value <= 1 and value == int(value)):
             continue
         problems.append(f"数字 {value:g} 在工具结果里找不到")
@@ -54,6 +59,8 @@ def check(reply, evidence_texts, *, completed=False, cancelled=False):
         word = match.group(0)
         if not (cancelled and "取消" in word):
             problems.append(f"没有成功回执却出现完成语“{word}”")
+    if not pending_created and PENDING_CLAIM.search(reply or ""):
+        problems.append("本轮没有生成待确认单，回复却说已生成")
     return not problems, problems
 
 
