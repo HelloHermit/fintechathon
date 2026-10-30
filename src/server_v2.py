@@ -142,7 +142,8 @@ class Handler(BaseHTTPRequestHandler):
             parsed = urlparse(self.path)
             path, query = parsed.path, {k: v[-1] for k, v in parse_qs(parsed.query).items()}
             if path.startswith("/api/v2/"):
-                return self._api_get(path[len("/api/v2/"):], query)
+                with self.app.kernel.lock:  # 只读接口都很快；加锁避免和演示重置、调度器交错
+                    return self._api_get(path[len("/api/v2/"):], query)
             if path == "/" or path == "/index.html":
                 return self._asset("index.html")
             if path in ("/manifest.webmanifest", "/sw.js", "/favicon.ico"):

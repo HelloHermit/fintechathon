@@ -104,9 +104,10 @@ class Kernel:
         return row[0] if row else None
 
     def now(self):
-        """模拟时间 = 锚点模拟时间 + 真实流逝时间。"""
-        anchor_sim = parse_iso(self._meta("clock_anchor_sim"))
-        anchor_real = float(self._meta("clock_anchor_real") or self.real_clock())
+        """模拟时间 = 锚点模拟时间 + 真实流逝时间。加锁读取，避免演示重置时读到空库。"""
+        with self.lock:
+            anchor_sim = parse_iso(self._meta("clock_anchor_sim"))
+            anchor_real = float(self._meta("clock_anchor_real") or self.real_clock())
         elapsed = max(0.0, self.real_clock() - anchor_real)
         return (anchor_sim + timedelta(seconds=int(elapsed))).astimezone(SHANGHAI)
 
