@@ -1,0 +1,23 @@
+# 用法：
+#   1. 设置密钥（不要写进这个文件）：export FINTECH_MODEL_API_KEY=你的密钥   （Windows PowerShell：$env:FINTECH_MODEL_API_KEY="你的密钥"）
+#   2. docker compose up --build
+#   3. 浏览器打开 http://localhost:8765
+# 重置演示数据：在页面“演示控制”里点“重置演示库”；或删除数据卷后重启：docker compose down -v && docker compose up
+services:
+  xiaoan:
+    build: .
+    image: xiaoan-mock-bank:latest
+    ports:
+      - "8765:8765"
+    environment:
+      FINTECH_MODEL_API_KEY: ${FINTECH_MODEL_API_KEY:-}
+      FINTECH_MODEL_BASE_URL: ${FINTECH_MODEL_BASE_URL:-https://api.deepseek.com}
+      FINTECH_MODEL_NAME: ${FINTECH_MODEL_NAME:-deepseek-flash}
+      # 浏览器地址栏里的“主机:端口”。如果把上面的端口映射改成别的（例如 "8080:8765"），这里要加上 localhost:8080
+      FINTECH_ALLOWED_HOSTS: ${FINTECH_ALLOWED_HOSTS:-localhost:8765,127.0.0.1:8765}
+    volumes:
+      - xiaoan-data:/data
+    restart: unless-stopped
+
+volumes:
+  xiaoan-data:

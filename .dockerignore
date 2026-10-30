@@ -1,0 +1,26 @@
+# 镜像里只需要 run.py、src/ 和录制的模型回复（cassettes/，如果有）
+.git
+.github
+.env
+.env.*
+!.env.example
+**/__pycache__
+**/*.pyc
+*.db
+*.db-wal
+*.db-shm
+data/
+dist/
+evidence/
+design/
+docs/
+spec/
+tests/
+bench/
+deliverables/
+scripts/
+.isolation/
+*.log
+*.mp4
+*.pptx
+*.pdf
