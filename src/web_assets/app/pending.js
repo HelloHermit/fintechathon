@@ -1,6 +1,6 @@
 // 待确认单：底部弹出面板（黄档确认 / 红档强验证）+ 对话里的简要卡片。
 // 安全要点：confirmation_code 只在点“确认”时原样回传，不显示、不存进对话；交易密码只存在局部变量里，提交后立即清空。
-import { h, icon, yuan, fmtTime, isoMs } from "./util.js";
+import { h, icon, yuan, fmtTime, isoMs, fill } from "./util.js";
 import { api } from "./api.js";
 import { state, on, emit, simNowMs, setPendingStatus } from "./store.js";
 import { runTurn } from "./turn.js";
@@ -73,7 +73,7 @@ class PendingView {
   renderConfirm() {
     const op = this.op;
     const risk = op.risk;
-    const lines = h("div.ps-lines", null, (op.lines || []).map((l) => h(`div.ps-line${l.emphasis ? ".emph" : ""}`, null, h("span.k", { text: l.label }), h("span.v", { text: l.value }))));
+    const lines = h("div.ps-lines", null, (op.lines || []).map((l) => h(`div.ps-line${l.emphasis ? ".emph" : ""}${String(l.value || "").length > 14 ? ".long" : ""}`, null, h("span.k", { text: l.label }), h("span.v", { text: l.value }))));
     const children = [
       this.header(),
       h("h2.ps-title", { text: op.title || "请确认" }),
@@ -96,7 +96,7 @@ class PendingView {
         this.mainBtn),
       this.expiryEl,
       h("div.ps-foot.muted.small", { text: op.tier === "red" ? "红档操作只认交易密码 + 动态码；在聊天里说“我确认”不算确认。" : "只有点击“确认办理”才会执行；在聊天里说“我确认”不算确认。" }));
-    this.el.replaceChildren(...children.filter(Boolean));
+    fill(this.el, ...children.filter(Boolean));
     this.updateClocks();
   }
 
@@ -142,7 +142,7 @@ class PendingView {
     if (this.cooldownEl) {
       if (nb && nb > now) {
         const left = Math.ceil((nb - now) / 1000);
-        this.cooldownEl.replaceChildren(icon("clock"), h("span", { text: `冷静期：请先停下来想一想，${left} 秒后才能继续。` }));
+        fill(this.cooldownEl, icon("clock"), h("span", { text: `冷静期：请先停下来想一想，${left} 秒后才能继续。` }));
         this.cooldownEl.hidden = false;
         blocked = true;
       } else {
@@ -205,7 +205,7 @@ class PendingView {
       this.key("0"),
       h("button.key.muted", { type: "button", onclick: () => this.backspace(), "aria-label": "删除" }, "删除"));
     const amount = (op.lines || []).find((l) => l.emphasis);
-    this.el.replaceChildren(
+    fill(this.el, 
       this.header(),
       h("h2.ps-title", { text: "强验证" }),
       h("div.sa-what", null, h("span", { text: op.title }), amount ? h("b", { text: amount.value }) : null),
@@ -243,8 +243,8 @@ class PendingView {
   clearField() { if (this.field === "pin") this.pin = ""; else this.otp = ""; this.paintFields(); }
   paintFields() {
     const dots = (n, show) => Array.from({ length: 6 }, (_, i) => h(`span.cd${i < n ? ".on" : ""}`, { text: i < n ? (show ? show[i] : "●") : "" }));
-    this.pinDots.replaceChildren(...dots(this.pin.length));
-    this.otpDots.replaceChildren(...dots(this.otp.length, this.otp));
+    fill(this.pinDots, ...dots(this.pin.length));
+    fill(this.otpDots, ...dots(this.otp.length, this.otp));
     this.pinDots.classList.toggle("active", this.field === "pin");
     this.otpDots.classList.toggle("active", this.field === "otp");
     this.verifyBtn.disabled = !(this.pin.length === 6 && this.otp.length === 6) || state.busy;

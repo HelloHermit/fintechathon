@@ -1,5 +1,5 @@
 // “小安”对话页。
-import { h, icon, fmtTime } from "./util.js";
+import { h, icon, fmtTime, fill } from "./util.js";
 import { state, on, openPendings } from "./store.js";
 import { sendChat } from "./turn.js";
 import { renderBlocks } from "./blocks.js";
@@ -35,7 +35,7 @@ export function chatPage() {
     });
     input.addEventListener("input", () => { autosize(); state.draft = input.value; });
     const mic = micButton((text) => { input.value = text; autosize(); input.focus(); });
-    el.replaceChildren(
+    fill(el, 
       h("header.chat-head", null,
         h("div.avatar", { text: "安" }),
         h("div.chat-head-main", null, h("div.chat-name", { text: "小安" }), h("div.muted.small", { text: "模型提议，代码裁决 · 模拟银行" })),
@@ -118,20 +118,20 @@ export function chatPage() {
     // 快捷回复：只显示最后一条助手消息的
     const last = [...state.messages].reverse().find((m) => m.role === "assistant");
     const items = state.busy ? [] : (last?.turn?.suggestions || []);
-    sugg.replaceChildren(...items.slice(0, 6).map((t) => h("button.chip-btn", { type: "button", onclick: () => sendChat(t) }, t)));
+    fill(sugg, ...items.slice(0, 6).map((t) => h("button.chip-btn", { type: "button", onclick: () => sendChat(t) }, t)));
     sugg.hidden = !items.length;
     // 待确认提示条
     const open = openPendings();
     if (open.length && !document.querySelector(".pending-sheet")) {
       const latest = open[open.length - 1];
       pendBar.hidden = false;
-      pendBar.replaceChildren(h(`span.tier-dot.${latest.op.tier}`), h("span", { text: open.length > 1 ? `${open.length} 笔操作待确认` : `待确认：${latest.op.title}` }), h("b", { text: "查看" }));
+      fill(pendBar, h(`span.tier-dot.${latest.op.tier}`), h("span", { text: open.length > 1 ? `${open.length} 笔操作待确认` : `待确认：${latest.op.title}` }), h("b", { text: "查看" }));
       pendBar.onclick = () => openPending(latest.id);
     } else pendBar.hidden = true;
     // 只读锁定
     if (state.lockedUntil) {
       lockBar.hidden = false;
-      lockBar.replaceChildren(icon("lock"), h("span", { text: `检测到多次可疑请求，会话只读到 ${fmtTime(state.lockedUntil, "hm")}（只能查询）。` }));
+      fill(lockBar, icon("lock"), h("span", { text: `检测到多次可疑请求，会话只读到 ${fmtTime(state.lockedUntil, "hm")}（只能查询）。` }));
     } else lockBar.hidden = true;
     input.disabled = false;
     sendBtn.disabled = state.busy;

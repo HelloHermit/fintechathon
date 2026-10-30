@@ -1,6 +1,6 @@
 // 卡片页：卡面、状态、限额；冻结/解冻/挂失/解挂/调整限额/申请虚拟卡。
 // 页面按钮不经过模型，但照样由后端代码判档并出确认单（风险对称：降风险=黄档，升风险=红档）。
-import { h, icon, yuan } from "./util.js";
+import { h, icon, yuan, fill } from "./util.js";
 import { api, QUICK } from "./api.js";
 import { state, on } from "./store.js";
 import { cardVisual, quickOrChat } from "./blocks.js";
@@ -12,12 +12,12 @@ export function cardsPage() {
   const body = h("div.cards-body");
 
   async function load() {
-    body.replaceChildren(h("div.skeleton"));
+    fill(body, h("div.skeleton"));
     try {
       const r = await api.cards();
       render(r.cards || []);
     } catch (e) {
-      body.replaceChildren(h("div.page-error", null, icon("alert"), h("p", { text: e.message }), h("button.btn", { type: "button", onclick: load }, "重试")));
+      fill(body, h("div.page-error", null, icon("alert"), h("p", { text: e.message }), h("button.btn", { type: "button", onclick: load }, "重试")));
     }
   }
 
@@ -28,7 +28,7 @@ export function cardsPage() {
   }
 
   function render(cards) {
-    body.replaceChildren(
+    fill(body, 
       ...cards.map((c) => {
         const tail = (c.masked_no || "").replace(/\D/g, "").slice(-4);
         const who = `尾号${tail}的${c.name}`;

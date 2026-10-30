@@ -46,7 +46,11 @@ export function applyTurn(resp, opts = {}) {
     const cur = state.pendings.get(opts.forRequest);
     const retryable = opts.kind === "verify" && resp.error && resp.error.code !== "locked";
     if (cur && cur.status === "open" && !retryable) {
-      setPendingStatus(opts.forRequest, opts.kind === "cancel" ? "cancelled" : resp.error ? "invalid" : "done");
+      const reason = resp.error?.reason;
+      const st = opts.kind === "cancel" && !resp.error ? "cancelled"
+        : !resp.error ? "done"
+        : reason === "duplicate" ? "done" : resp.error.code === "expired" ? "expired" : "invalid";
+      setPendingStatus(opts.forRequest, st);
     }
   }
   if (resp.pending) {

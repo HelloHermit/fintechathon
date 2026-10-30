@@ -1,8 +1,9 @@
 // 首页：总资产、账户、小安提醒（主动关怀）、快捷入口、通知。
-import { h, icon, yuan, fmtTime } from "./util.js";
+import { h, icon, yuan, fmtTime, fill } from "./util.js";
 import { api } from "./api.js";
 import { state, on, emit, simNowMs, beijing } from "./store.js";
-import { insight } from "./blocks.js";
+import { insight, quickOrChat } from "./blocks.js";
+import { QUICK } from "./api.js";
 import { sendChat } from "./turn.js";
 import { goTab, pushPage } from "./nav.js";
 import { notificationsPage } from "./me.js";
@@ -30,7 +31,7 @@ export function homePage() {
       state.home = await api.home();
       emit("home", state.home);
     } catch (e) {
-      el.replaceChildren(h("div.page-error", null, icon("alert"), h("p", { text: e.message }), h("button.btn", { type: "button", onclick: load }, "重试")));
+      fill(el, h("div.page-error", null, icon("alert"), h("p", { text: e.message }), h("button.btn", { type: "button", onclick: load }, "重试")));
       return;
     }
     render();
@@ -53,7 +54,7 @@ export function homePage() {
     });
     const money = (c) => (hidden ? "****" : yuan(c));
     const quick = (d.quick_actions?.length ? d.quick_actions : DEFAULT_QUICK).slice(0, 8);
-    el.replaceChildren(
+    fill(el, 
       h("header.home-head", null,
         h("div", null, h("div.home-greet", { text: `${greet()}，${user.display_name || ""}` }), h("div.muted.small", { text: "模拟银行 · 所有数据均为模拟" })),
         h("button.icon-btn.bell", { type: "button", "aria-label": `通知${unread ? `，${unread} 条未读` : ""}`, onclick: () => pushPage("消息通知", notificationsPage) },
@@ -69,6 +70,14 @@ export function homePage() {
       h("section.quick", null, quick.map((q) => h("button.quick-item", {
         type: "button", onclick: () => { goTab("chat"); sendChat(q.prompt); },
       }, h("span.quick-ic", null, icon(q.icon || pickIcon(q.label))), h("span", { text: q.label })))),
+      (d.aa_requests || []).length ? h("section.home-sec", null,
+        h("div.sec-title", null, icon("coin"), h("span", { text: "待支付的 AA" })),
+        h("div.insights", null, d.aa_requests.map((a) => h("div.insight", null,
+          h("div.insight-ic", null, icon("coin")),
+          h("div.insight-main", null, h("div.insight-title", { text: `${a.from_name} 发起的 AA ${yuan(a.amount_cents)}` }), h("div.insight-body", { text: a.memo || "" })),
+          h("div.aa-btns", null,
+            h("button.btn.small.primary", { type: "button", onclick: () => { goTab("chat"); quickOrChat(QUICK.payAA, { request_id: a.request_id }, `支付 ${a.from_name} 的 AA ${yuan(a.amount_cents)}`, `帮我付${a.from_name}发起的AA`); } }, "去支付"),
+            h("button.btn.small.ghost", { type: "button", onclick: () => { goTab("chat"); quickOrChat(QUICK.declineAA, { request_id: a.request_id }, `拒绝 ${a.from_name} 的 AA`, `拒绝${a.from_name}发起的AA`); } }, "拒绝")))))) : null,
       (d.insights || []).length ? h("section.home-sec", null,
         h("div.sec-title", null, icon("sparkle"), h("span", { text: "小安提醒" }), h("span.muted.small", { text: `${d.insights.length} 条` })),
         h("div.insights", null, d.insights.map((x) => insight(x)))) : null,

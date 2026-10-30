@@ -1,5 +1,5 @@
 // 底部标签 + 子页面栈（子页面盖在当前标签上，有返回按钮）。
-import { h, icon, clear } from "./util.js";
+import { h, icon, clear, fill } from "./util.js";
 import { state, emit } from "./store.js";
 import { closeSheet } from "./sheet.js";
 
@@ -29,7 +29,7 @@ export function goTab(name) {
   const screen = document.getElementById("screen");
   const page = pages[name];
   screen.dataset.tab = name;
-  screen.replaceChildren(page.el || (page.el = page.build()));
+  fill(screen, page.el || (page.el = page.build()));
   page.show?.();
   emit("tab", name);
 }

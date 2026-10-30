@@ -106,14 +106,20 @@ export const api = {
 };
 
 // 页面按钮直接发起的业务（不经过模型，后端照样判档和确认）。
-// 意图名以 API_V2 为准；API_V2 目前只写明了 query_subscriptions，其余名称已在 status-B 请 A 确认。
+// 意图名以 API_V2 第 5.2 节为准。
 export const QUICK = {
   subscriptions: "query_subscriptions",
   freezeCard: "freeze_card",
   unfreezeCard: "unfreeze_card",
   reportLost: "report_card_lost",
-  cancelLost: "cancel_card_lost",
+  cancelLost: "restore_card",
   setLimit: "set_card_limit",
   applyVirtual: "apply_virtual_card",
   redeem: "redeem_product",
+  revoke: "revoke_transfer",
+  payAA: "pay_aa_request",
+  declineAA: "decline_aa_request",
+  markNormal: "mark_normal",
+  detectAnomalies: "detect_anomalies",
+  startAssessment: "start_risk_assessment",
 };

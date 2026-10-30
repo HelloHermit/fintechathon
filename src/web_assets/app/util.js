@@ -43,6 +43,8 @@ function append(el, children) {
 }
 
 export function clear(el) { el.replaceChildren(); return el; }
+/** replaceChildren 会把 null 变成文字 "null"，这里先过滤掉空值 */
+export function fill(el, ...kids) { el.replaceChildren(...kids.flat(Infinity).filter((k) => k !== null && k !== undefined && k !== false)); return el; }
 
 // ---- 金额 ----
 export function yuan(cents, { sign = false, plain = false } = {}) {

@@ -1,5 +1,5 @@
 // 演示控制：快进模拟时间、重置演示库、切换身份。桌面端在右侧面板，手机端在“我的”里。
-import { h, icon, fmtTime } from "./util.js";
+import { h, icon, fmtTime, fill } from "./util.js";
 import { api } from "./api.js";
 import { state, emit, on, pushMessage, setClock, simNowMs, beijing } from "./store.js";
 import { toast } from "./toast.js";
@@ -54,9 +54,9 @@ export function demoControls() {
   const userRow = h("div.seg");
   const paint = () => {
     const b = beijing(simNowMs());
-    timeEl.replaceChildren(h("span.muted.small", { text: "模拟时间" }), h("b", { text: `${b.date} ${b.hh}:${b.mm}` }), h("span.muted.small", { text: `周${b.weekday}` }));
+    fill(timeEl, h("span.muted.small", { text: "模拟时间" }), h("b", { text: `${b.date} ${b.hh}:${b.mm}` }), h("span.muted.small", { text: `周${b.weekday}` }));
     const users = state.session?.demo?.users || [];
-    userRow.replaceChildren(...users.map((u) => h(`button.seg-btn${u.user_id === state.session?.user?.user_id ? ".on" : ""}`,
+    fill(userRow, ...users.map((u) => h(`button.seg-btn${u.user_id === state.session?.user?.user_id ? ".on" : ""}`,
       { type: "button", onclick: () => u.user_id !== state.session?.user?.user_id && switchUser(u.user_id) }, u.display_name)));
   };
   paint();

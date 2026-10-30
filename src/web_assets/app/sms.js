@@ -1,6 +1,6 @@
 // 模拟手机短信：轮询 /api/v2/sim-phone；新短信在手机框顶部弹横幅，并出现在右侧“模拟手机”面板。
 // 动态码只在这里给用户看，不进对话、不给模型。
-import { h, icon, fmtTime } from "./util.js";
+import { h, icon, fmtTime, fill } from "./util.js";
 import { api } from "./api.js";
 import { state, on, emit } from "./store.js";
 
@@ -34,7 +34,7 @@ on("messages-reset", () => { first = true; pollSms(); });
 function showBanner(m) {
   const el = document.getElementById("sms-banner");
   if (!el) return;
-  el.replaceChildren(
+  fill(el, 
     h("div.smsb-head", null, h("span.smsb-app", null, icon("chat"), h("span", { text: "短信 · 模拟" })), h("span.muted.small", { text: "现在" })),
     h("div.smsb-from", { text: m.from || "模拟银行" }),
     h("div.smsb-text", { text: m.text }));
@@ -49,7 +49,7 @@ export function smsList() {
   const list = h("div.sms-list");
   const paint = () => {
     const msgs = [...(state.sms || [])].reverse();
-    list.replaceChildren(...(msgs.length ? msgs.map((m) => h("div.sms", null,
+    fill(list, ...(msgs.length ? msgs.map((m) => h("div.sms", null,
       h("div.sms-head", null, h("b", { text: m.from || "模拟银行" }), h("span.muted.small", { text: fmtTime(m.received_at) })),
       h("div.sms-text", { text: m.text }))) : [h("div.empty", { text: "还没有短信。红档操作点“获取动态码”后，模拟短信会出现在这里。" })]));
   };

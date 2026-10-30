@@ -4,7 +4,7 @@ import { state, on, simNowMs, beijing } from "./store.js";
 import { renderBlock, txnRow } from "./blocks.js";
 import { goTab } from "./nav.js";
 import { sendChat } from "./turn.js";
-import { h, icon, debounce } from "./util.js";
+import { h, icon, debounce, fill } from "./util.js";
 
 const beijingMonth = (ms) => beijing(ms).date.slice(0, 7);
 
@@ -18,19 +18,19 @@ export function billsPage() {
   const seg = h("div.seg.seg-full");
 
   function paintSeg() {
-    seg.replaceChildren(...[["month", "月报"], ["year", "年报"], ["list", "明细"]].map(([k, label]) =>
+    fill(seg, ...[["month", "月报"], ["year", "年报"], ["list", "明细"]].map(([k, label]) =>
       h(`button.seg-btn${mode === k ? ".on" : ""}`, { type: "button", onclick: () => { mode = k; paintSeg(); load(); } }, label)));
   }
 
   async function load() {
     if (!month) month = beijingMonth(simNowMs());
-    body.replaceChildren(h("div.skeleton"));
+    fill(body, h("div.skeleton"));
     try {
       if (mode === "month") await loadMonth();
       else if (mode === "year") await loadYear();
       else await loadList();
     } catch (e) {
-      body.replaceChildren(h("div.page-error", null, icon("alert"), h("p", { text: e.message }), h("button.btn", { type: "button", onclick: load }, "重试")));
+      fill(body, h("div.page-error", null, icon("alert"), h("p", { text: e.message }), h("button.btn", { type: "button", onclick: load }, "重试")));
     }
   }
 
@@ -39,7 +39,7 @@ export function billsPage() {
     const [y, m] = month.split("-").map(Number);
     const shift = (d) => { const t = new Date(Date.UTC(y, m - 1 + d, 1)); month = `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}`; load(); };
     const isCurrent = month >= beijingMonth(simNowMs());
-    body.replaceChildren(
+    fill(body, 
       h("div.month-switch", null,
         h("button.icon-btn", { type: "button", "aria-label": "上个月", onclick: () => shift(-1) }, icon("back")),
         h("b", { text: `${y} 年 ${m} 月` }),
@@ -52,7 +52,7 @@ export function billsPage() {
 
   async function loadYear() {
     const r = await api.annual({ last12: 1 });
-    body.replaceChildren(renderBlock({ type: "report", data: r }));
+    fill(body, renderBlock({ type: "report", data: r }));
   }
 
   async function loadList() {
@@ -63,7 +63,7 @@ export function billsPage() {
     const search = h("input.search", { type: "search", placeholder: "搜索商户或备注", "aria-label": "搜索交易" });
     const cat = h("select.select", { "aria-label": "分类" }, h("option", { value: "" }, "全部分类"), CATEGORIES.map((c) => h("option", { value: c }, c)));
     async function fetchPage(reset) {
-      if (reset) { q.cursor = null; list.replaceChildren(h("div.skeleton")); }
+      if (reset) { q.cursor = null; fill(list, h("div.skeleton")); }
       const r = await api.transactions({ q: q.q, category: q.category, limit: 50, cursor: q.cursor });
       if (reset) list.replaceChildren();
       (r.items || []).forEach((t) => list.append(txnRow(t)));
@@ -72,11 +72,11 @@ export function billsPage() {
       more.hidden = !q.cursor;
       count.textContent = `已显示 ${list.querySelectorAll(".txn").length} 笔`;
     }
-    const refetch = debounce(() => fetchPage(true).catch((e) => list.replaceChildren(h("div.empty", { text: e.message }))), 300);
+    const refetch = debounce(() => fetchPage(true).catch((e) => fill(list, h("div.empty", { text: e.message }))), 300);
     search.addEventListener("input", () => { q.q = search.value.trim(); refetch(); });
     cat.addEventListener("change", () => { q.category = cat.value; refetch(); });
     more.addEventListener("click", () => fetchPage(false).catch(() => {}));
-    body.replaceChildren(h("div.filter-row", null, h("span.search-wrap", null, icon("search"), search), cat), count, h("div.card-plain", null, list), more);
+    fill(body, h("div.filter-row", null, h("span.search-wrap", null, icon("search"), search), cat), count, h("div.card-plain", null, list), more);
     await fetchPage(true);
   }
 

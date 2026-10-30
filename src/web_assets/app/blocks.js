@@ -37,7 +37,9 @@ export async function quickOrChat(intent, params, label, chatText) {
   if (state.busy) return;
   const r = await runTurn(async () => {
     try {
-      return await api.quickIntent(intent, params);
+      const r = await api.quickIntent(intent, params);
+      if (r?.error?.code === "invalid_request" && !r.pending && !(r.assistant?.blocks || []).length && chatText) return api.chat(chatText);
+      return r;
     } catch (e) {
       if (e instanceof ApiError && (e.status === 400 || e.status === 404 || e.code === "unknown_intent" || e.code === "invalid_request") && chatText) {
         return api.chat(chatText);
@@ -132,7 +134,7 @@ function anomaly_list(d) {
 
 function report(d) {
   const kindText = d.kind === "annual" ? "年度报告" : "月度账单报告";
-  const periodText = typeof d.period === "string" ? d.period : d.period ? `${fmtTime(d.period.from, "ymd")} 至 ${fmtTime(d.period.to, "ymd")}` : "";
+  const periodText = typeof d.period === "string" ? d.period : d.period ? (d.period.label || `${fmtTime(d.period.from, "ymd")} 至 ${fmtTime(d.period.to, "ymd")}`) : "";
   return h("div.card-plain.report", null,
     h("div.report-head", null, h("div", null, h("div.report-kind", { text: kindText }), h("div.report-period", { text: periodText })), icon("chart")),
     h("div.kpis", null, (d.kpis || []).map((k) => h("div.kpi", null,
@@ -248,7 +250,7 @@ export function scheduledRow(x) {
     h("div.right", null, x.amount_cents != null ? h("div.money", { text: yuan(x.amount_cents) }) : null, chip(st, tone),
       x.revocable && x.status === "scheduled" ? h("button.btn.small.danger-outline", {
         type: "button",
-        onclick: () => { document.dispatchEvent(new CustomEvent("goto-tab", { detail: "chat" })); quickOrChat("revoke_transfer", { schedule_id: x.schedule_id }, `撤回：${x.title}`, `撤回${x.title}`); },
+        onclick: () => { document.dispatchEvent(new CustomEvent("goto-tab", { detail: "chat" })); quickOrChat("revoke_transfer", { transfer_id: x.schedule_id }, `撤回：${x.title}`, `撤回${x.title}`); },
       }, "撤回") : null));
 }
 function scheduled_list(d) {
@@ -313,11 +315,19 @@ export function insight(d) {
 function code_analysis(d) {
   const ok = d.status === "ok";
   const lim = d.limits || {};
-  const res = d.result || {};
+  const raw = d.result || {};
+  // API_V2 5.4：result = {type, value}；兼容把 columns/rows/series 直接放在 result 上的写法
+  const v = raw.value;
+  const res = { ...raw, ...(v && typeof v === "object" && !Array.isArray(v) ? v : {}) };
+  if (raw.type === "table" && Array.isArray(v)) res.rows = v;
+  if (raw.type === "series" && Array.isArray(v)) res.series = v;
+  if (raw.type === "value" && (v === null || typeof v !== "object")) res.value = v;
   let resultEl = null;
-  if (res.type === "value") resultEl = h("div.ca-value", null, h("span.muted.small", { text: res.label || "结果" }), h("div.money", { text: formatResultValue(res.value, res.unit) }));
+  if (raw.type === "value" && v && typeof v === "object") resultEl = objectTable(v);
+  else if (res.type === "value") resultEl = h("div.ca-value", null, h("span.muted.small", { text: res.label || "结果" }), h("div.money", { text: formatResultValue(res.value, res.unit) }));
   else if (res.type === "table") {
-    const cols = res.columns || Object.keys((res.rows || [])[0] || {});
+    const first = (res.rows || [])[0];
+    const cols = res.columns || (first && !Array.isArray(first) ? Object.keys(first) : (first || []).map((_, i) => `列${i + 1}`));
     resultEl = h("div.table-scroll", null, h("table.compare", null,
       h("thead", null, h("tr", null, cols.map((c) => h("th", { text: c })))),
       h("tbody", null, (res.rows || []).map((r) => h("tr", null, cols.map((c, i) => h("td", { text: formatCell(Array.isArray(r) ? r[i] : r[c], c) })))))));
@@ -330,9 +340,24 @@ function code_analysis(d) {
     d.question ? h("div.ca-q", { text: d.question }) : null,
     resultEl,
     h("div.ca-sandbox", null, icon("shield"),
-      h("span", { text: `${d.engine === "docker" ? "Docker 容器" : "受限子进程"} · 超时 ${lim.timeout_s ?? "?"} 秒 · 内存 ${lim.memory_mb ?? "?"}MB · ${lim.network === false ? "无网络" : "网络受限"} · 用时 ${d.duration_ms ?? "?"}ms` })),
+      h("span", { text: `${ENGINE[d.engine] || d.engine || "沙箱"} · 超时 ${lim.timeout_s ?? "?"} 秒${lim.cpu_s ? ` · CPU ${lim.cpu_s} 秒` : ""} · 内存 ${lim.memory_mb ?? "?"}MB · ${lim.network === false ? "无网络" : typeof lim.network === "string" ? `网络：${lim.network}` : "网络受限"} · 用时 ${d.duration_ms ?? "?"}ms` })),
+    d.status !== "ok" && d.reason ? h("div.note.warning", null, h("div", { text: `原因：${d.reason}` })) : null,
     codeBox);
 }
+/** 沙箱返回的嵌套对象 → 表格（第一列是键，其余列是内层字段） */
+function objectTable(obj) {
+  const entries = Array.isArray(obj) ? obj.map((x, i) => [String(i + 1), x]) : Object.entries(obj);
+  const nested = entries.every(([, x]) => x && typeof x === "object" && !Array.isArray(x));
+  if (!nested) {
+    return h("div.ca-value", null, entries.map(([k, x]) => kv(LABEL[k] || k, typeof x === "object" ? JSON.stringify(x) : String(x))));
+  }
+  const cols = [...new Set(entries.flatMap(([, x]) => Object.keys(x)))];
+  return h("div.table-scroll", null, h("table.compare", null,
+    h("thead", null, h("tr", null, h("th", { text: "" }), cols.map((c) => h("th", { text: LABEL[c] || c })))),
+    h("tbody", null, entries.map(([k, x]) => h("tr", null, h("th", { text: LABEL[k] || k }), cols.map((c) => h("td", { text: formatCell(x[c], c) })))))));
+}
+const LABEL = { weekend: "周末", weekday: "工作日", count: "笔数", total: "合计", avg: "平均", average: "平均", mean: "平均", sum: "合计", max: "最大", min: "最小", median: "中位数" };
+const ENGINE = { docker: "Docker 容器", subprocess: "受限子进程", "subprocess+netns": "受限子进程 + 无网络命名空间" };
 function formatResultValue(v, unit) {
   if (typeof v === "number" && (unit === "cents" || unit === "分")) return yuan(v);
   return unit && unit !== "cents" ? `${v} ${unit}` : String(v);

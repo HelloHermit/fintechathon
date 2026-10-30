@@ -304,6 +304,7 @@ pre, .code { font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, mono
 .ps-line { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 .ps-line:last-child { border-bottom: 0; } .ps-line .k { color: var(--muted); flex: none; } .ps-line .v { text-align: right; color: var(--ink); word-break: break-all; }
 .ps-line.emph .v { font-size: 22px; font-weight: 800; letter-spacing: -.3px; }
+.ps-line.emph.long .v { font-size: 16px; font-weight: 750; }
 .ps-impact { display: flex; gap: 6px; font-size: 13px; color: var(--muted); margin: 10px 2px; } .ps-impact .ic { width: 16px; height: 16px; color: var(--brand); margin-top: 2px; }
 .ps-plan { margin-top: 10px; } .ps-plan .card-plain { box-shadow: none; border: 1px solid var(--line); margin-top: 6px; }
 .risk-box { border-radius: var(--r-sm); padding: 12px; margin-top: 10px; background: var(--yellow-soft); border: 1px solid #f6d49a; }
@@ -394,3 +395,4 @@ pre, .code { font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, mono
 .about { text-align: center; } .about .avatar { margin: 0 auto; } .about p, .about ul { text-align: left; font-size: 14px; }
 .limit-sheet { padding-bottom: 8px; }
 .is-mock .sb-badge::after { content: " · 假数据"; }
+.aa-btns { display: grid; gap: 4px; }
