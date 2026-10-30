@@ -288,7 +288,7 @@ class Handler(BaseHTTPRequestHandler):
             text = body.get("text")
             if set(body) != {"text"} or type(text) is not str or not 1 <= len(text.strip()) <= 500:
                 return self._error(400, "invalid_request", "消息需要 1–500 个字。")
-            if not app.allow(("chat", client), 30, 60):
+            if not app.allow(("chat", client), int(os.environ.get("FINTECH_CHAT_RATE_PER_MIN", "60")), 60):
                 return self._error(429, "rate_limited", "发送太频繁了，请稍后再试。")
             return self._send(200, agent.chat(uid, text.strip()))
         if route == "confirm":

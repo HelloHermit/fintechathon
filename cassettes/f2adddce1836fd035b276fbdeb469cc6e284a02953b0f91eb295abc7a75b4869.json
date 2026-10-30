@@ -1,0 +1,1 @@
+{"content": "确认单已生成：明天 09:00 给王磊（小王）转 ¥200，备注“还饭钱”。请你在确认单上点确认，才会执行。", "tool_calls": [], "model": "deepseek-flash", "usage": {"prompt": 969, "completion": 38}, "ms": 1578}

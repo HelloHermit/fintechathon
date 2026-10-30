@@ -234,3 +234,59 @@ class SandboxTests(unittest.TestCase):
         self.assertEqual(out.blocks[0]["data"]["status"], "ok")
         row = k.db.execute("SELECT params_redacted FROM audit WHERE event='sandbox_run'").fetchone()
         self.assertIn("code_hash", row[0])
+
+
+class PermissionTableTests(unittest.TestCase):
+    """权限表 v5 中前面没有单独覆盖的行。"""
+
+    def test_revoke_is_yellow(self):
+        k, clock = new_kernel()
+        p = k.propose("alice", "transfer", {"source_account_id": "alice-main", "target_account_id": "bob-main", "payee_contact_id": "c-wang",
+                                            "payee_name": "王磊", "amount_cents": 50000, "arrival": "delayed_2h"})["pending"]
+        k.confirm("alice", p["request_id"], p["confirmation_code"])
+        revoke = tool(k, "revoke_transfer", "撤回刚才那笔").pending
+        self.assertEqual(revoke["tier"], "yellow")
+        k.confirm("alice", revoke["request_id"], revoke["confirmation_code"])
+        self.assertEqual(k.db.execute("SELECT balance_cents FROM accounts WHERE account_id='alice-main'").fetchone()[0], 2658000)
+        self.assertEqual(k.db.execute("SELECT balance_cents FROM accounts WHERE account_id='bob-main'").fetchone()[0], 820000)
+
+    def test_cancel_scheduled_is_yellow(self):
+        k, _ = new_kernel()
+        p = tool(k, "cancel_scheduled", "下个月房租先别自动转了", keyword="房租").pending
+        self.assertEqual(p["tier"], "yellow")
+        k.confirm("alice", p["request_id"], p["confirmation_code"])
+        k.advance_clock(to="2026-11-01T10:00:00+08:00")
+        self.assertEqual(k.db.execute("SELECT COUNT(*) FROM transfers WHERE payee_name='李建国'").fetchone()[0], 0)
+
+    def test_unknown_tool_and_unknown_intent_refused(self):
+        k, _ = new_kernel()
+        out = run_tool("drop_all_tables", {}, TaskContext(k, "alice", ["x"]))
+        self.assertEqual(out.model_result["status"], "error")
+        with self.assertRaises(RuleError):
+            k.propose("alice", "set_tier_green", {})
+
+    def test_aa_payment_red_when_cumulative_over_limit(self):
+        k, _ = new_kernel()
+        p = tool(k, "aa_collect", "和小王吃饭花了2400，AA一下", total_amount=2400, participants=["小王"]).pending
+        k.confirm("alice", p["request_id"], p["confirmation_code"])
+        pay = tool(k, "pay_aa", "付一下AA", user="bob").pending
+        self.assertEqual(pay["tier"], "red")  # 人均 ¥1,200 > 小额额度
+
+    def test_plan_with_red_node_needs_strong_auth(self):
+        from src.core import plans
+        k, _ = new_kernel()
+        ctx = TaskContext(k, "alice", ["11月10日给小王转900"])
+        p = run_tool("transfer", {"payee": "小王", "amount": 900, "when": "11月10日"}, ctx).pending
+        k.confirm("alice", p["request_id"], p["confirmation_code"])
+        plan = plans.create_birthday_plan(k, "alice", "c-spouse")
+        result = k.propose("alice", "plan", {"plan_id": plan["plan_id"]}, plan_id=plan["plan_id"])
+        self.assertEqual(result["pending"]["tier"], "red")
+        self.assertEqual(result["pending"]["kind"], "strong_auth")
+
+    def test_read_only_lock_blocks_writes_but_not_reads(self):
+        k, _ = new_kernel()
+        for _ in range(3):
+            k.record_suspicious("alice", "injection:test")
+        with self.assertRaises(RuleError):
+            k.propose("alice", "freeze_card", {"card_id": "card-6621"})
+        self.assertEqual(tool(k, "get_accounts", "余额").model_result["accounts"][0]["tail"], "6621")

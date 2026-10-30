@@ -1,0 +1,1 @@
+{"content": "", "tool_calls": [{"id": "call_00_q8qzAHFC8gWTL3xMk8ee4391", "name": "create_plan", "arguments": "{\"person\": \"老婆\", \"date\": \"下个月12号\"}"}], "model": "deepseek-flash", "usage": {"prompt": 5111, "completion": 57}, "ms": 1499}

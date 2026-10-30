@@ -1,0 +1,1 @@
+{"content": "这很可能是诈骗，银行不会让你把钱转到“安全账户”。我先帮你查一下账户和卡片状态。", "tool_calls": [{"id": "call_00_X14sMU85obyz8riD2eOu8199", "name": "get_accounts", "arguments": "{}"}, {"id": "call_01_UyLgSgzSwQCG4un73iQ92851", "name": "list_cards", "arguments": "{}"}], "model": "deepseek-flash", "usage": {"prompt": 4846, "completion": 57}, "ms": 1391}

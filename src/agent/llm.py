@@ -63,7 +63,12 @@ class LLMClient:
         return "live" if self._api_key else "unavailable"
 
     def _key(self, payload):
-        stable = {k: payload[k] for k in ("model", "messages", "tools") if k in payload}
+        """录制键：模型名 + 工具名 + 非系统消息。系统提示词里有当前时间，不参与计算，回放才稳定。"""
+        messages = [m for m in payload["messages"] if m.get("role") != "system"]
+        stable = {"model": payload["model"], "tools": sorted(t["function"]["name"] for t in payload.get("tools") or []),
+                  "messages": [{"role": m.get("role"), "content": m.get("content") or "",
+                                "calls": [c["function"]["name"] + c["function"]["arguments"] for c in m.get("tool_calls") or []]}
+                               for m in messages]}
         return hashlib.sha256(json.dumps(stable, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
     def chat(self, messages, tools=None, temperature=0):
@@ -78,8 +83,10 @@ class LLMClient:
         if self.mode == "replay":
             path = self.cassette_dir / (key + ".json")
             if not path.exists():
-                raise ModelUnavailable("model_unavailable", "回放模式下没有这句话的录制结果。")
-            return json.loads(path.read_text(encoding="utf-8"))
+                raise ModelUnavailable("model_unavailable", "回放模式下没有这句话的录制结果（只能回放录制过的演示对话，按录制时的顺序输入）。")
+            result = json.loads(path.read_text(encoding="utf-8"))
+            result["ms"] = 0
+            return result
         if not self._api_key:
             raise ModelUnavailable("model_unavailable", "没有配置模型密钥（FINTECH_MODEL_API_KEY）。")
         started = time.monotonic()

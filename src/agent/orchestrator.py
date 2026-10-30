@@ -125,7 +125,32 @@ class Agent:
                                                                       suggestions=DEFAULT_SUGGESTIONS[:3]))
         texts = self._task_texts(user_id, text)
         ctx = tools.TaskContext(self.kernel, user_id, texts, turn_id=turn_id)
-        return self._finish(user_id, turn_id, text, self._model_loop(user_id, text, ctx, trace, started))
+        pre_blocks = self._risk_prescan(user_id, text, trace)
+        resp = self._model_loop(user_id, text, ctx, trace, started)
+        if pre_blocks:
+            resp["assistant"]["blocks"] = pre_blocks + resp["assistant"]["blocks"]
+            resp["guard"]["input"] = "warned"
+        return self._finish(user_id, turn_id, text, resp)
+
+    def _risk_prescan(self, user_id, text, trace):
+        """代码反诈预检：用户原话里出现的手机号如果在模拟涉诈风险名单上，直接标出（不依赖模型判断）。"""
+        from ..core.ops import fraud_signals
+        blocks = []
+        for phone in set(re.findall(r"(?<![0-9])1[3-9][0-9]{9}(?![0-9])", text)):
+            entry = self.kernel.db.execute("""SELECT d.masked_name, r.reason FROM phone_directory d JOIN risk_list r
+                ON r.account_id=d.account_id WHERE d.phone=?""", (phone,)).fetchone()
+            if entry:
+                masked = phone[:3] + "****" + phone[-4:]
+                trace.append(tools.step("risk", f"反诈预检：{masked}（{entry['masked_name']}）在模拟涉诈风险名单上，任何转账都会被代码拒绝",
+                                        "blocked", {"reason": entry["reason"]}))
+                blocks.append({"type": "note", "data": {"tone": "danger", "text":
+                               f"风险提示：{masked} 在涉诈风险名单上（{entry['reason']}）。向它的任何转账都会被系统拒绝。"
+                               "公检法和银行客服不会要求你把钱转到“安全账户”，请挂断电话，可拨打 96110 反诈专线（模拟提示）。"}})
+        signals = fraud_signals([text])
+        if signals["fraud_terms"] and not blocks:
+            trace.append(tools.step("risk", "反诈预检：出现“" + "”“".join(signals["fraud_terms"][:3]) + "”等诈骗常见话术，转账将计入反诈评分",
+                                    "warned", signals))
+        return blocks
 
     def _model_loop(self, user_id, text, ctx, trace, started):
         kernel = self.kernel

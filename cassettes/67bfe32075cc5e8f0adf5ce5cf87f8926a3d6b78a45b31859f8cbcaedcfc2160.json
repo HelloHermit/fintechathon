@@ -1,0 +1,1 @@
+{"content": "", "tool_calls": [{"id": "call_00_ct2LrbJduxddlqnxNbJG7737", "name": "query_subscriptions", "arguments": "{}"}], "model": "deepseek-flash", "usage": {"prompt": 5148, "completion": 22}, "ms": 992}

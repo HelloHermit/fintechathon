@@ -1,0 +1,1 @@
+{"content": "这笔我没法办：收款人手机号来自那条可疑备注，不是你本人说的，系统已拒绝。\n\n“安全账户”是诈骗话术，建议直接挂断。要我帮你临时冻结卡片或转人工核实吗？", "tool_calls": [], "model": "deepseek-flash", "usage": {"prompt": 5113, "completion": 47}, "ms": 1432}
