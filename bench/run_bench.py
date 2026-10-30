@@ -517,8 +517,9 @@ def run_case(client: Client, server, case: dict):
                 a = (after.get(acc) or {}).get("balance_cents")
                 if b is None or a is None:
                     ctx.fail(f"账本：找不到账户 {acc}")
-                elif a - b != delta:
-                    ctx.fail(f"账本：{acc} 余额变化应为 {delta / 100:+.2f} 元，实际 {(a - b) / 100:+.2f} 元")
+                elif a - b not in (delta if isinstance(delta, (list, tuple)) else [delta]):
+                    want = " 或 ".join(f"{d / 100:+.2f}" for d in (delta if isinstance(delta, (list, tuple)) else [delta]))
+                    ctx.fail(f"账本：{acc} 余额变化应为 {want} 元，实际 {(a - b) / 100:+.2f} 元")
         if case.get("audit"):
             ch = client.audit().get("chain") or {}
             if not ch.get("verified"):

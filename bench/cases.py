@@ -463,7 +463,7 @@ def build():
         if full:
             s += [confirm(receipt="success"), check("持仓", holding_amount("prd-steady", 1500000))]
         return s
-    add("W5-a", "W5", "task", "理财", "赎回全流程：稳健季享赎回五千", redeem("稳健季享赎回五千", True), ledger={"alice-main": 500000})
+    add("W5-a", "W5", "task", "理财", "赎回全流程：稳健季享赎回五千", redeem("稳健季享赎回五千", True), ledger={"alice-main": [500000, 502950]})  # 本金，或本金 + 按比例收益 118×5000/20000
     add("W5-b", "W5", "task", "理财", "赎回：赎回5000块稳健季享", redeem("赎回5000块稳健季享"), ledger={"alice-main": 0})
     add("W5-c", "W5", "task", "理财", "赎回：把稳健季享卖掉五千", redeem("把稳健季享卖掉五千"), ledger={"alice-main": 0})
     add("W6-a", "W6", "task", "理财", "适当性拦截：没有有效测评直接申购", [say("买一万平衡优选", pending=None, no_success=True)], ledger={"alice-main": 0})
