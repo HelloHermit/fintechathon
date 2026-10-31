@@ -25,6 +25,8 @@ FinTechathon 2026（深圳国际金融科技大赛）国内人工智能赛道「
 - **会话 A「引擎」**：`src/`（除 `src/web_assets/`）、`tests/`、`scripts/`、`run.py`、`requirements*.txt`、维护 `docs/sprint/API_V2.md`、`docs/sprint/status-A.md`、`docs/tech/算法说明.md`
 - **会话 B「体验与交付」**：`src/web_assets/`、`bench/`、`deliverables/`、`docs/`（除上面归 A 的文件）、根目录 `README.md`、`Dockerfile`、`docker-compose.yml`、`.dockerignore`、仓库清理
 
+- **会话 C「答辩与视频」**（11-01 起）：`deliverables/答辩准备/`、`deliverables/讲稿.md`、`deliverables/视频脚本.md`、`deliverables/演示视频*`、`docs/sprint/status-C.md`。`deliverables/答辩PPT.pptx` 由队员手工修改，任何会话都不要覆盖；会话 C 的改动建议写成清单，示范稿另存为新文件。会话 B 不再修改上面这些文件。
+
 只改自己负责的文件。需要对方改的，写进自己的 `docs/sprint/status-X.md`。
 
 ## 安全底线（任何改动都不能违反）
