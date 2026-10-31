@@ -318,3 +318,4 @@ data: {TurnResponse，与 /chat 返回的完全一样}
 - `Card` 多带 `foreign_enabled: bool`（境外交易是否开通，种子默认全部关闭）。
 - quick-intent 新增 `enable_foreign`（红档）、`disable_foreign`（黄档），参数 `card_id`（风险对称）。
 - 聊天新增：开通/关闭境外交易、查模拟汇率（绿档，`receipt` 卡片列出汇率 + `note`“模拟汇率”）、换汇（黄档，`intent: "exchange_currency"`）、旅行预算（黄档，复用 `reserve_budget`）。汇率是固定模拟值。换汇在流水里的分类是“换汇”，不计入消费统计和对外转账累计。
+- `spending_breakdown.categories[]` 多带 `avg_cents`（该类单笔平均，整数分）。
