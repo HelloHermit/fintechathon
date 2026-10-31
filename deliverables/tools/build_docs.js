@@ -18,6 +18,7 @@ const DOCS = [
   ["docs/安全自评报告.md", "安全自评报告.pdf"],
   ["docs/测试报告.md", "测试报告.pdf"],
   ["docs/部署说明.md", "部署说明.pdf"],
+  ["docs/飞书接入说明.md", "飞书接入说明.pdf"],
 ];
 const FONT = `"PingFang SC","Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","WenQuanYi Zen Hei",sans-serif`;
 const MERMAID_INIT = { startOnLoad: false, theme: "base", fontFamily: FONT, flowchart: { htmlLabels: true, curve: "basis" },
