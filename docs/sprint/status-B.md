@@ -7,18 +7,19 @@
 - 状态（10-31 16:50）：**PLAN 第 11.3 节第 1–5 项已完成并推送**（流式对话、绑定飞书页、飞书待办提示、PWA 离线外壳与可安装、`docs/飞书接入说明.md`、技术文档第 7–8 节“对标 Revolut AIR”“多渠道与渠道分级风控”、安全自评 3.5 节与 R12–R14、README 两个渠道、PPT 第 2 页改为行业对标、新增第 5 页多渠道、沙箱并入防幻觉页，仍为 15 页）。
 - **等会话 A**：流式接口与飞书接口还没上线；前端按第 14 条的提议名字实现，接口不存在时自动退回或提示，不报错。A 在 API_V2 定稿后我对一遍名字，并在真实后端上联调；第 11.3 第 6 项（飞书真机片段剪进视频）等队长录好再做。
 - 此前（10-31 01:20）：**B0–B6 初稿全部完成并已推送**；B7 的“全新克隆能跑、文档链接有效”已先检查通过。评测第三次全量（`dee1f4e`）151/151。
+- **分工调整（10-31 16:10 规划会话提出，队长 16:15 确认“按规划会话的分工做”）**：演示视频由队长本人制作，PPT 由队员手工修改——**本会话不再运行 `record_video.js`、`build_ppt.js`，也不改 `deliverables/演示视频.mp4`、`deliverables/答辩PPT.pptx`**；改为在 `deliverables/PPT素材/` 准备素材（已完成，见下表）。文档（技术文档、安全自评、测试报告、README、部署说明、飞书接入说明、PDF）仍由本会话负责。
 - **队长说“继续”后的下一步**：
-  1. `git pull`，读 `docs/sprint/status-A.md`，跟进接口变更与 A 的留言。
-  2. **11-01 22:00 最终评测**（功能冻结 20:00 之后）：`python bench/run_bench.py --start`（约 10 分钟）。失败项先判断是后端问题还是用例/运行器问题，照实记录。
-  3. 用最终评测数字同步材料：`docs/测试报告.md` 第 1、3.2、3.4、3.5 节，`README.md` 评测表，`docs/技术文档.md` 第 1、8 节，`docs/安全自评报告.md` 第 1、5 节（这几处是手写的）；然后 `cd deliverables/tools && node build_ppt.js`（PPT 与讲稿自动读 `bench/reports/latest.json`，但讲稿第 13 页写了“第三次全量运行”，要按实际改）、`node build_docs.js pdf`。
-  4. 用冻结后的代码重启后端（`python run.py --reset`），`node deliverables/tools/screens.js` 重截图，`node deliverables/tools/record_video.js` 重录视频，再 `python deliverables/tools/video_script.py` 更新分镜时间，抽帧检查。
-  5. B7：全新克隆三条命令启动；`grep -rn "{{\|TODO\|待队长填写"` 检查占位；各材料数字一致；打 `v1.0` 标签（Release 附源码包需要在 GitHub 网页上操作，或请队长操作）。
+  1. `git pull`，读 `docs/sprint/status-A.md`。
+  2. **11-01 22:00 最终评测**：`python bench/run_bench.py --start`；失败项先判断是后端问题还是用例/运行器问题，照实记录。
+  3. 用最终数字同步：`deliverables/PPT素材/说明.md` 的“最终数字”一节（队员据此改 PPT）；`docs/测试报告.md` 第 1、3.2、3.4、3.5 节；`README.md` 评测表；`docs/技术文档.md` 第 1、10 节；`docs/安全自评报告.md` 第 1、5 节；然后 `node deliverables/tools/ppt_assets.js` 重画图表和能力对照（会读最新 `latest.json` 与 history）、`node deliverables/tools/build_docs.js pdf`。
+  4. B7：全新克隆三条命令启动；`grep -rn "{{\|TODO\|待队长填写"` 检查占位；各材料数字一致；打 `v1.0` 标签（Release 附源码包需要在 GitHub 网页上操作，或请队长操作）。
 - 检查点：CP1（10-30 21:43）、评测首跑（10-30 22:03）、CP2/CP3 的评测与材料初稿（10-31 01:10）均已达成。
 
 ## 已完成（附验证方式与结果）
 
 | 时间 | 步骤 | 内容 | 怎么验证的 | 结果 |
 |---|---|---|---|---|
+| 10-31 16:20 | PPT 素材 | `deliverables/PPT素材/`：a 架构简版（1600px 大字号四层）、b 对标 Revolut AIR（PNG + 文字版，含来源）、c 评测迭代图（三轮任务完成率 94.3→97.7→100%、攻击拦截率 62.2→100→100%）、d 高清截图 8 张（反诈拦截手机/桌面、定时转账确认单→回执、生日计划整体确认单与 DAG 详情、红档强验证手机/桌面含模拟短信）、e 18 项能力对照（PNG + 文字版，结果读评测）、`说明.md`（每张放哪一页 + 最终数字一节）；生成工具 `deliverables/tools/ppt_assets.js` | 真实后端 + 真实模型截图，逐张目视检查 | 通过 |
 | 10-31 16:50 | PLAN 11.3 | 前端：`/chat/stream` 流式（失败退回 `/chat`）、“我的 → 绑定飞书”、来自飞书的待办横幅、`sw.js` 离线外壳、manifest 补 `id` 与 maskable 图标；文档：`docs/飞书接入说明.md`（新，含 PDF）、技术文档第 7–8 节、安全自评 3.5 节与 R12–R14、README；PPT 15 页（行业对标、多渠道） | Chrome `Page.getInstallabilityErrors` 为空（可安装），Service Worker 以 `/` 注册成功（服务端已能返回 `/sw.js`）；真实后端上流式 404 → 退回 `/chat` 正常；假数据模式流式步骤显示、绑定码流程、控制台 0 错误；`tests.test_web_acceptance` 通过；PPT 校验通过并渲染检查；10 个文档链接有效 | 通过；飞书相关接口待 A 上线后联调 |
 | 10-31 01:20 | B6 | `deliverables/作品简介.txt`（190 字）；`答辩PPT.pptx`（15 页，pptxgenjs 生成，评测数字读 `latest.json`）与 `讲稿.md`（约 2440 字 / 9 分钟）；`演示视频.mp4`（Playwright 自动录屏 + ffmpeg 中文字幕，2 分 55 秒，4.6MB）、`演示视频字幕.srt`、`视频脚本.md` | PPT：校验 All validations PASSED，LibreOffice 渲染 15 页逐页检查（修了 3 处）；视频：抽 22 帧检查画面与字幕一致（第一次理财段没出问卷，改说法后重录） | 通过 |
 | 10-31 01:10 | B3 | 第三次全量评测（`dee1f4e`） | `python bench/run_bench.py --start` | **151/151**：任务 87/87、安全 45/45、体验 19/19；泄露 0；误拒 0/107；平均 1.98 秒/轮 |
@@ -75,6 +76,6 @@
 
 1. **填写团队分工**：`docs/技术文档.md` 第 13 节有一处【待队长填写每人的分工】；PPT 第 15 页只写了“三名大一学生”，如需写名字和分工告诉我。
 2. **建飞书应用**（PLAN 第 11 节）：按 `docs/飞书接入说明.md` 一步步做，拿到 App ID / Secret 写进本机 `.env`（不要发到聊天）；等会话 A 的飞书机器人上线后用 `python run.py --feishu` 试，结果告诉开发会话。
-3. **看一遍材料**：`deliverables/答辩PPT.pptx`、`deliverables/演示视频.mp4`（约 3 分钟，无配音，只有字幕；如果想要配音，可以照 `deliverables/视频脚本.md` 的字幕朗读后合成）、`deliverables/作品简介.txt`。
+3. **PPT 与视频**（按新分工由你们手工做）：PPT 素材和放置位置见 `deliverables/PPT素材/说明.md`；我之前自动录的 `deliverables/演示视频.mp4`（约 3 分钟）和 `视频脚本.md` 可以当参考或底稿。`deliverables/作品简介.txt` 也请看一遍。
 4. **Docker 实测**（可选）：云端没有 Docker 守护进程，`Dockerfile` 没有实际构建过。如果有装了 Docker 的电脑，跑一次 `docker compose up --build` 告诉我结果。
 5. **11-02 18:00 前在报名系统提交**（只有队长能做）。
