@@ -167,7 +167,7 @@ export function feishuPage(c) {
     }
     if (f.bound) {
       fill(c, h("div.chain-box.ok", null, icon("check"), h("div", null, h("b", { text: `已绑定飞书${f.display_name ? "：" + f.display_name : ""}` }),
-        h("div.muted.small", { text: f.bound_at ? `绑定时间 ${fmtTime(f.bound_at, "ymd hm")}` : "" }))),
+        h("div.muted.small", { text: [f.masked_account ? `飞书账号 ${f.masked_account}` : "", f.bound_at ? `绑定时间 ${fmtTime(f.bound_at, "ymd hm")}` : ""].filter(Boolean).join(" · ") }))),
         rules,
         h("button.btn.danger-outline.block", { type: "button", onclick: async () => { try { await api.feishuUnbind(); } catch (e) { /* 显示在下面 */ } load(); } }, "解除绑定"));
       return;

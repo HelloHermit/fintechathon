@@ -63,7 +63,7 @@ async function restorePendings() {
 function paintOriginBanner() {
   const el = document.getElementById("origin-banner");
   if (!el) return;
-  const items = openPendings().filter(({ op }) => op.origin && op.origin !== "app");
+  const items = openPendings().filter(({ op }) => { const ch = op.channel || op.origin; return ch && ch !== "app"; }); // API_V2 5.6：PendingOperation.channel
   if (!items.length) { el.hidden = true; return; }
   const first = items[0];
   const red = first.op.tier === "red" || first.op.kind === "strong_auth";

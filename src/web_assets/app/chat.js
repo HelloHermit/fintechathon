@@ -155,7 +155,9 @@ export function chatPage() {
   on("stream-step", (st) => {
     if (!busyLabel?.isConnected) return;
     clearInterval(busyTimer);
-    busyLabel.textContent = `${STEP_KIND[st.kind] || "处理中"}：${String(st.label || "").slice(0, 40)}`;
+    const kind = STEP_KIND[st.kind] || "处理中";
+    const label = String(st.label || "");
+    busyLabel.textContent = (label.startsWith(kind) ? label : `${kind}：${label}`).slice(0, 44); // 后端标签常已带步骤名
     scrollDown();
   });
 
