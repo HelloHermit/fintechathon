@@ -63,5 +63,6 @@ def unbind(kernel, channel, user_id):
 
 def status(kernel, user_id, bot_running):
     external, bound_at = external_for(kernel, "feishu", user_id)
-    return {"feishu": {"bot_running": bool(bot_running), "bound": external is not None, "bound_at": bound_at,
-                       "masked_account": mask_external(external)}}
+    return {"feishu": {"enabled": bool(bot_running), "bot_running": bool(bot_running), "bound": external is not None,
+                       "bound_at": bound_at, "masked_account": mask_external(external),
+                       "display_name": kernel.user(user_id)["display_name"] if external else None}}

@@ -297,7 +297,7 @@ data: {TurnResponse，与 /chat 返回的完全一样}
 ```
 
 - `step` 事件就是 TraceStep，按发生顺序推送（输入守卫、模型每一步、参数溯源、代码判档、反诈评分、事实校验、审计）；`final` 只有一个，之后连接关闭。
-- 出错时同样以 `final` 结束（TurnResponse.error 有值）；请求本身不合法（CSRF、字段错误、限流）时不进入流式，直接返回普通 JSON 错误（403/400/429）。
+- 业务上的错误（模型不可用、超时、被拦截等）同样以 `final` 结束（TurnResponse.error 有值）；服务端内部异常时改为推一条 `event: error`（`data: {"code":"internal","message":"…"}`）后关闭连接，不再有 `final`。请求本身不合法（CSRF、字段错误、限流）时不进入流式，直接返回普通 JSON 错误（403/400/429）。
 - `/chat` 保留不变；前端流式不可用时可以退回 `/chat`。
 
 **飞书渠道**（当前演示身份绑定自己的飞书账号）：
@@ -305,9 +305,10 @@ data: {TurnResponse，与 /chat 返回的完全一样}
 | 方法 | 路径 | 请求体 | 返回 |
 |---|---|---|---|
 | POST | /api/v2/channels/feishu/bind-code | `{}` | `{"code":"482913","expires_at":"…","instructions":"在飞书里私聊机器人发送：绑定 482913"}`：6 位一次性绑定码，5 分钟有效，重新生成会让旧码作废。库里只存哈希 |
-| GET | /api/v2/channels | – | `{"feishu":{"bot_running":bool,"bound":bool,"bound_at":"…"|null,"masked_account":"ou_****1a2b"|null}}` |
+| GET | /api/v2/channels | – | `{"feishu":{"enabled":bool,"bot_running":bool,"bound":bool,"bound_at":"…"|null,"display_name":"陈雨桐"|null,"masked_account":"ou_****1a2b"|null}}`（`enabled` = 后端以 `--feishu` 启动且机器人在运行，和 `bot_running` 相同） |
 | POST | /api/v2/channels/feishu/unbind | `{}` | 同 `GET /channels` |
 
 - 渠道分级风控：飞书里只能办绿档和黄档。黄档发一张飞书卡片，带“确认 / 取消”按钮；按钮回调里只有一个随机的卡片令牌，服务端用它找到确认码（确认码不发给飞书）。在飞书里打“确认”仍然无效。红档在飞书里只生成待办并回复“请在 App 内完成强验证”，动态码只出现在网页的模拟手机里，绝不发到飞书。
 - `PendingOperation` 新增 `channel: "app" | "feishu"`（这张单是从哪个渠道发起的）。来自飞书的红档单在网页 `GET /api/v2/pending` 里能看到，网页上照常完成交易密码 + 动态码。
 - 绑定后，定时任务执行结果、续费/生日提醒、AA 收款请求等通知会推送到飞书私聊（只推送给已绑定的本人）。
+- `GET /sw.js` 返回 `src/web_assets/sw.js`（`text/javascript`，`Cache-Control: no-cache`），Service Worker 作用域可以是 `/`。

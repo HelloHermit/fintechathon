@@ -298,9 +298,11 @@ class Handler(BaseHTTPRequestHandler):
             resp = self.app.agent.chat(uid, text, on_step=lambda step: emit("step", step))
         except Exception:
             traceback.print_exc()
-            resp = {"turn_id": None, "assistant": {"text": "服务暂时不可用，未报告任何业务成功。", "blocks": []}, "pending": None,
-                    "plan": None, "suggestions": [], "trace": [], "guard": {"input": "pass", "fact_check": "pass", "locked_until": None},
-                    "error": {"code": "internal", "message": "服务暂时不可用"}}
+            try:
+                emit("error", {"code": "internal", "message": "服务暂时不可用，未报告任何业务成功。"})
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            return
         try:
             emit("final", resp)
         except (BrokenPipeError, ConnectionResetError):
