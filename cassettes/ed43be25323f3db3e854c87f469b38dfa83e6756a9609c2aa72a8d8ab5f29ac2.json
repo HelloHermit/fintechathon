@@ -1,0 +1,1 @@
+{"content": "", "tool_calls": [{"id": "call_00_VNBOsD9ylakw2Z6iwYVi8279", "name": "transfer", "arguments": "{\"payee\": \"17000000000\"}"}], "model": "deepseek-flash", "usage": {"prompt": 5321, "completion": 40}, "ms": 1474}

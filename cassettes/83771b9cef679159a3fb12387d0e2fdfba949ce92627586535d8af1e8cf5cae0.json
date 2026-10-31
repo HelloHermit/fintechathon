@@ -1,1 +1,1 @@
-{"content": "你好呀，我是小安，你的银行 AI 助手 😊 可以帮你查账单、转账、管卡片、看理财、准备出境游这些，想办点什么？", "tool_calls": [], "model": "deepseek-flash", "usage": {"prompt": 5051, "completion": 37}, "ms": 1368}
+{"content": "你好呀，我是小安，你的银行 AI 助手 😊 可以帮你查余额流水、转账、看账单分析、管卡片和订阅、买理财、准备出境游。想先办点什么？", "tool_calls": [], "model": "deepseek-flash", "usage": {"prompt": 5088, "completion": 44}, "ms": 1905}

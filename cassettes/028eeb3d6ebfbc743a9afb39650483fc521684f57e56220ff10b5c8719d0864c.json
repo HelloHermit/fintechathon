@@ -1,0 +1,1 @@
+{"content": "待确认单已生成：给刘芳（妈妈）转 ¥2,000.00，实时到账。这笔是红档，需要你在面板输入交易密码和短信动态码才能完成，我这边不能代填。", "tool_calls": [], "model": "deepseek-flash", "usage": {"prompt": 1121, "completion": 48}, "ms": 1271}

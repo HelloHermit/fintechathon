@@ -1,0 +1,1 @@
+{"content": "", "tool_calls": [{"id": "call_00_LdhC7WrJRXixkLtELKdJ4152", "name": "cancel_subscription", "arguments": "{\"name\": \"健身会员\"}"}], "model": "deepseek-flash", "usage": {"prompt": 5651, "completion": 39}, "ms": 1694}

@@ -1,0 +1,1 @@
+{"content": "", "tool_calls": [{"id": "call_00_FO4omCMOQcoeA9QEH3zP8759", "name": "detect_anomalies", "arguments": "{}"}], "model": "deepseek-flash", "usage": {"prompt": 5467, "completion": 25}, "ms": 877}

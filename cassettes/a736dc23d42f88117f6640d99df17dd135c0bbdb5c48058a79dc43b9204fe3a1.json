@@ -1,0 +1,1 @@
+{"content": "", "tool_calls": [{"id": "call_00_og3s62DNzFIbnd7KwonX2043", "name": "transfer", "arguments": "{\"payee\": \"17000000000\", \"amount\": 2000, \"memo\": \"安全账户\"}"}], "model": "deepseek-flash", "usage": {"prompt": 5480, "completion": 75}, "ms": 1663}

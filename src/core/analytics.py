@@ -142,7 +142,8 @@ class Analytics:
             sums[r["category"]] += -r["amount_cents"]
             counts[r["category"]] += 1
         total = sum(sums.values())
-        categories = [{"name": name, "amount_cents": cents, "share": round(cents / total, 4) if total else 0, "count": counts[name]}
+        categories = [{"name": name, "amount_cents": cents, "share": round(cents / total, 4) if total else 0, "count": counts[name],
+                       "avg_cents": cents // counts[name] if counts[name] else 0}
                       for name, cents in sorted(sums.items(), key=lambda kv: kv[1], reverse=True)]
         span = end - start
         if start.day == 1 and start.hour == 0 and span <= timedelta(days=31):

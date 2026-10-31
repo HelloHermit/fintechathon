@@ -1,0 +1,1 @@
+{"content": "", "tool_calls": [{"id": "call_00_IQu3zjZkIzaQgRqmWDld9442", "name": "spending_summary", "arguments": "{\"period\": \"本月\"}"}], "model": "deepseek-flash", "usage": {"prompt": 5448, "completion": 39}, "ms": 1257}

@@ -186,7 +186,8 @@ def spending_summary(ctx, period=None):
     data = analytics.breakdown(ctx.user_id, start, end)
     block = {"type": "spending_breakdown", "data": data}
     return ToolOutcome({"period": f"{label}（{start:%Y-%m-%d} 至 {end:%Y-%m-%d}）", "total_expense": yuan(data["total_cents"]),
-                        "categories": [{"name": c["name"], "amount": yuan(c["amount_cents"]), "share": f"{round(c['share'] * 100)}%", "count": c["count"]}
+                        "categories": [{"name": c["name"], "amount": yuan(c["amount_cents"]), "share": f"{round(c['share'] * 100)}%", "count": c["count"],
+                                        "avg_per_txn": yuan(c["avg_cents"])}
                                        for c in data["categories"][:8]],
                         "previous_period_total": yuan(data["compare"]["prev_total_cents"]),
                         "change_pct": data["compare"]["change_pct"]}, blocks=[block])
