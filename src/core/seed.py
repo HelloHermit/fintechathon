@@ -80,7 +80,7 @@ def seed(connection, now=SEED_TIME):
     ])
     c.execute("INSERT INTO risk_list VALUES('ext-fraud','模拟涉诈风险名单：多起“安全账户”诈骗收款')")
     created = "2024-03-01T10:00:00+08:00"
-    c.executemany("INSERT INTO cards VALUES(?,?,?,?,?,?,?,?,?,?)", [
+    c.executemany("INSERT INTO cards(card_id,user_id,name,kind,tail,account_id,status,daily_limit_cents,purpose,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)", [
         ("card-6621", "alice", "储蓄卡", "debit", "6621", "alice-main", "active", 500000, "", created),
         ("card-3301", "alice", "网购虚拟卡", "virtual", "3301", "alice-main", "active", 100000, "网购", created),
         ("card-1234", "bob", "储蓄卡", "debit", "1234", "bob-main", "active", 500000, "", created),

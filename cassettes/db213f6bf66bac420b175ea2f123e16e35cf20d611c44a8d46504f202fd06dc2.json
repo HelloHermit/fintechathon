@@ -1,0 +1,1 @@
+{"content": "", "tool_calls": [{"id": "call_00_pgBITARkjs3r8ZofnZcT9385", "name": "recommend_products", "arguments": "{\"horizon_days\": 180, \"preference\": \"stable\"}"}], "model": "deepseek-flash", "usage": {"prompt": 5611, "completion": 59}, "ms": 1177}

@@ -290,3 +290,32 @@ class PermissionTableTests(unittest.TestCase):
         with self.assertRaises(RuleError):
             k.propose("alice", "freeze_card", {"card_id": "card-6621"})
         self.assertEqual(tool(k, "get_accounts", "余额").model_result["accounts"][0]["tail"], "6621")
+
+
+class TravelTests(unittest.TestCase):
+    def test_foreign_toggle_risk_symmetry(self):
+        k, _ = new_kernel()
+        on = tool(k, "card_action", "下周去日本，储蓄卡开通境外交易", action="enable_foreign").pending
+        self.assertEqual(on["tier"], "red")
+        strong(k, on)
+        self.assertEqual(k.db.execute("SELECT foreign_enabled FROM cards WHERE card_id='card-6621'").fetchone()[0], 1)
+        off = tool(k, "card_action", "回来了，储蓄卡关闭境外交易", action="disable_foreign").pending
+        self.assertEqual(off["tier"], "yellow")
+
+    def test_exchange_and_budget(self):
+        k, _ = new_kernel()
+        p = tool(k, "exchange_currency", "换5万日元", currency="JPY", foreign_amount=50000).pending
+        self.assertEqual(p["tier"], "yellow")
+        k.confirm("alice", p["request_id"], p["confirmation_code"])
+        self.assertEqual(k.db.execute("SELECT amount_minor FROM fx_wallets WHERE currency='JPY'").fetchone()[0], 50000)
+        self.assertEqual(k.db.execute("SELECT balance_cents FROM accounts WHERE account_id='alice-main'").fetchone()[0], 2658000 - 250000)
+        start, end, _ = k.analytics.resolve_period("今天", k.now())
+        self.assertEqual(k.analytics.breakdown("alice", start, end)["total_cents"], 0)  # 换汇不算消费
+        b = tool(k, "travel_budget", "去日本玩，锁8000旅行预算", amount=8000, destination="日本").pending
+        self.assertEqual(b["tier"], "yellow")
+        self.assertIn("日本", b["title"])
+
+    def test_fx_rates_green(self):
+        k, _ = new_kernel()
+        out = tool(k, "fx_rates", "日元汇率多少")
+        self.assertIn("模拟", out.model_result["note"])

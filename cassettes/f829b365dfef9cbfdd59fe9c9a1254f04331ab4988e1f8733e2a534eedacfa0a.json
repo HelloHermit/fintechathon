@@ -1,0 +1,1 @@
+{"content": "给刘芳（妈妈）转 ¥2,000 的确认单已生成，属于强验证档，需要你在面板输入交易密码和短信动态码才能执行。", "tool_calls": [], "model": "deepseek-flash", "usage": {"prompt": 1064, "completion": 36}, "ms": 1224}

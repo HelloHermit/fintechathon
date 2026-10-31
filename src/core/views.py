@@ -24,7 +24,7 @@ def card(k, row):
         AND substr(time,1,10)=?""", (row["card_id"], today)).fetchone()[0]
     return {"card_id": row["card_id"], "name": row["name"], "kind": row["kind"], "masked_no": "**** " + row["tail"],
             "account_id": row["account_id"], "status": row["status"], "daily_limit_cents": row["daily_limit_cents"],
-            "today_spent_cents": spent}
+            "today_spent_cents": spent, "foreign_enabled": bool(row["foreign_enabled"]) if "foreign_enabled" in row.keys() else False}
 
 
 def cards(k, user_id):

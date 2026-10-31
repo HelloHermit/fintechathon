@@ -312,3 +312,9 @@ data: {TurnResponse，与 /chat 返回的完全一样}
 - `PendingOperation` 新增 `channel: "app" | "feishu"`（这张单是从哪个渠道发起的）。来自飞书的红档单在网页 `GET /api/v2/pending` 里能看到，网页上照常完成交易密码 + 动态码。
 - 绑定后，定时任务执行结果、续费/生日提醒、AA 收款请求等通知会推送到飞书私聊（只推送给已绑定的本人）。
 - `GET /sw.js` 返回 `src/web_assets/sw.js`（`text/javascript`，`Cache-Control: no-cache`），Service Worker 作用域可以是 `/`。
+
+### 5.7 2026-10-31 · v2.1.1（PLAN 11.2.8 出境游，可选项）
+
+- `Card` 多带 `foreign_enabled: bool`（境外交易是否开通，种子默认全部关闭）。
+- quick-intent 新增 `enable_foreign`（红档）、`disable_foreign`（黄档），参数 `card_id`（风险对称）。
+- 聊天新增：开通/关闭境外交易、查模拟汇率（绿档，`receipt` 卡片列出汇率 + `note`“模拟汇率”）、换汇（黄档，`intent: "exchange_currency"`）、旅行预算（黄档，复用 `reserve_budget`）。汇率是固定模拟值。换汇在流水里的分类是“换汇”，不计入消费统计和对外转账累计。

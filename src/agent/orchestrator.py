@@ -19,7 +19,7 @@ MAX_STEPS = 6
 HISTORY_LIMIT = 12
 TASK_TEXT_LIMIT = 4
 BUSINESS_HINT = re.compile(r"转账|转[0-9一二两三四五六七八九十百千万]|AA|冻|挂失|解挂|限额|虚拟卡|订阅|自动扣费|续费|会员|申购|买|赎回|理财|持仓|"
-                          r"账单|花了|花在|支出|收入|余额|流水|我的卡|哪些卡|异常|报告|年报|月报|撤回|房租|工资|测评|定时")
+                          r"账单|花了|花在|支出|收入|余额|流水|我的卡|哪些卡|异常|报告|年报|月报|撤回|房租|工资|测评|定时|汇率|换汇|境外|出国|旅行")
 DEFAULT_SUGGESTIONS = ["这个月花了多少钱？", "帮我看看有没有异常扣款", "我有哪些卡", "给小王转200"]
 
 
@@ -562,6 +562,8 @@ QUICK_INTENTS = {
     "pay_aa": ("aa_pay", lambda p: {"aa_id": p.get("aa_id") or p["request_id"]}),
     "pay_aa_request": ("aa_pay", lambda p: {"aa_id": p.get("request_id") or p["aa_id"]}),
     "cancel_card_lost": ("restore_card", lambda p: {"card_id": p["card_id"]}),
+    "enable_foreign": ("enable_foreign", lambda p: {"card_id": p["card_id"]}),
+    "disable_foreign": ("disable_foreign", lambda p: {"card_id": p["card_id"]}),
     "cancel_scheduled": ("cancel_scheduled", lambda p: {"schedule_id": p["schedule_id"]}),
 }
 

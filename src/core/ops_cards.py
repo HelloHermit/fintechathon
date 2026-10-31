@@ -188,7 +188,7 @@ class ApplyVirtualCard(Handler):
         while self.db.execute("SELECT 1 FROM cards WHERE card_id=?", (card_id,)).fetchone():
             tail = f"{secrets.randbelow(9000) + 1000}"
             card_id = "card-" + tail
-        self.db.execute("INSERT INTO cards VALUES(?,?,?,?,?,?,?,?,?,?)",
+        self.db.execute("INSERT INTO cards(card_id,user_id,name,kind,tail,account_id,status,daily_limit_cents,purpose,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
                         (card_id, user_id, p["purpose"] + "虚拟卡", "virtual", tail, user_id + "-main", "active",
                          p["daily_limit_cents"], p["purpose"], iso(self.k.now())))
         return {"status": "success", "title": "虚拟卡已开通",
@@ -586,6 +586,8 @@ def pay_order_from_budget(k, user_id, budget_id, service_id, deliver_date, plan_
 
 
 def register(ops):
+    from . import travel
+    travel.register(ops)
     for cls in (FreezeCard, UnfreezeCard, ReportLost, RestoreCard, SetCardLimit, ApplyVirtualCard, QuerySubscriptions,
                 CancelSubscription, SubmitRiskAssessment, PurchaseProduct, RedeemProduct, ReserveBudget):
         ops.register(cls(ops))

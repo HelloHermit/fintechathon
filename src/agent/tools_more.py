@@ -121,13 +121,15 @@ def list_cards(ctx):
                        blocks=[{"type": "card_list", "data": {"items": cards}}])
 
 
-CARD_ACTIONS = {"freeze": ("freeze_card", ("active",)), "unfreeze": ("unfreeze_card", ("frozen",)),
+CARD_ACTIONS = {"enable_foreign": ("enable_foreign", ("active",)), "disable_foreign": ("disable_foreign", ("active",)),
+                "freeze": ("freeze_card", ("active",)), "unfreeze": ("unfreeze_card", ("frozen",)),
                 "report_lost": ("report_card_lost", ("active", "frozen")), "restore": ("restore_card", ("lost",))}
 
 
 @tool("card_action", "卡片状态操作：freeze=临时冻结、unfreeze=解冻、report_lost=正式挂失、restore=解挂（卡找到了）、"
+      "enable_foreign=开通境外交易（出国前）、disable_foreign=关闭境外交易、"
       "lost=用户说卡丢了但没说要冻结还是挂失（系统会给两个选项）。只生成待确认单。",
-      {"action": {"type": "string", "enum": ["freeze", "unfreeze", "report_lost", "restore", "lost"]},
+      {"action": {"type": "string", "enum": ["freeze", "unfreeze", "report_lost", "restore", "lost", "enable_foreign", "disable_foreign"]},
        "card": {"type": "string", "description": "用户说的卡：尾号、“储蓄卡”“虚拟卡”等；没说就不填"}}, ["action"], write=True)
 def card_action(ctx, action="", card=None):
     trace = []
@@ -506,3 +508,57 @@ def run_analysis(ctx, question="", code=""):
         model_result["reason"] = result["reason"]
         model_result["note"] = "可以修正代码后再调用一次。"
     return ToolOutcome(model_result, blocks=[block], trace=trace)
+
+
+# ---------------------------------------------------------------------------------------------- 出境游（对标 Revolut AIR 旅行规划）
+from ..core import travel  # noqa: E402
+
+
+@tool("fx_rates", "查询模拟汇率（美元、欧元、日元、港币、英镑、泰铢、韩元、新加坡元），以及本人的外币钱包余额。")
+def fx_rates(ctx):
+    rates = travel.rates_view()
+    mine = travel.wallets(ctx.kernel, ctx.user_id)
+    lines = [{"label": f"{r['name']}（{r['currency']}）", "value": f"1 = ¥{r['cny_per_unit']}"} for r in rates]
+    lines += [{"label": "我的外币钱包", "value": "、".join(w["amount_text"] for w in mine) or "暂无"}]
+    return ToolOutcome({"rates": [{"currency": r["name"], "cny_per_unit": r["cny_per_unit"]} for r in rates], "note": travel.RATE_NOTE,
+                        "my_wallets": [w["amount_text"] for w in mine]},
+                       blocks=[{"type": "receipt", "data": {"title": "模拟汇率", "status": "success", "lines": lines, "request_id": "", "audit_hash": ""}},
+                               {"type": "note", "data": {"text": travel.RATE_NOTE, "tone": "info"}}])
+
+
+def _currency_from_text(ctx, currency):
+    for word, code in sorted(list(travel.CURRENCY_WORDS.items()) + list(travel.DEST_CURRENCY.items()), key=lambda kv: -len(kv[0])):
+        if word in ctx.current:
+            return code
+    for word, code in sorted(list(travel.CURRENCY_WORDS.items()) + list(travel.DEST_CURRENCY.items()), key=lambda kv: -len(kv[0])):
+        if word in ctx.joined:
+            return code
+    if currency and currency.upper() in travel.RATES and ctx.mentions(currency.upper()):
+        return currency.upper()
+    return None
+
+
+@tool("exchange_currency", "模拟换汇：用人民币买入外币存进本人外币钱包（出国前用）。只生成待确认单（黄档）。",
+      {"currency": {"type": "string", "description": "外币代码，如 JPY、USD"},
+       "foreign_amount": {"type": "number", "description": "用户说的外币数量（如“5万日元”填 50000）"}},
+      ["currency", "foreign_amount"], write=True)
+def exchange_currency(ctx, currency="", foreign_amount=None):
+    trace = []
+    code = _currency_from_text(ctx, currency)
+    if code is None:
+        raise RuleError("need_info", "要换哪种外币？例如日元、美元、欧元。")
+    trace.append(provenance_step("币种", True, f"用户原话 → {travel.RATES[code][0]}"))
+    cents = _check_amount(ctx, foreign_amount, trace, field="外币金额")  # 用户说的数（按“元”解析）
+    scale = travel.RATES[code][2]
+    minor = cents if scale == 100 else cents // 100
+    return _propose(ctx, "exchange_currency", {"currency": code, "amount_minor": minor}, trace)
+
+
+@tool("travel_budget", "为出行锁定一笔旅行预算（钱仍在本人账户，只是锁定不挪用）。只生成待确认单（黄档）。",
+      {"amount": {"type": "number", "description": "预算金额（元），用户说出的数"}, "destination": {"type": "string", "description": "目的地"}},
+      ["amount"], write=True)
+def travel_budget(ctx, amount=None, destination=None):
+    trace = []
+    cents = _check_amount(ctx, amount, trace, field="预算")
+    dest = destination[:10] if destination and ctx.mentions(destination[:10]) else "出行"
+    return _propose(ctx, "reserve_budget", {"amount_cents": cents, "name": f"{dest}旅行预算"}, trace)

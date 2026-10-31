@@ -1,1 +1,0 @@
-{"content": "这类“安全账户”是典型诈骗话术，银行不会要求你把钱转到所谓安全账户。我先帮你核实账户状态。", "tool_calls": [{"id": "call_00_NKAuoDJU5EcQMO8rTPIc4275", "name": "get_accounts", "arguments": "{}"}, {"id": "call_01_oVvZlBnBQylnirZvgjt91277", "name": "list_cards", "arguments": "{}"}], "model": "deepseek-flash", "usage": {"prompt": 4898, "completion": 61}, "ms": 2037}

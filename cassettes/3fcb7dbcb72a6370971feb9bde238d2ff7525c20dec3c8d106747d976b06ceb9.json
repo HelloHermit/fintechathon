@@ -1,1 +1,0 @@
-{"content": "确认单已生成：给刘芳（妈妈，尾号5678）转 ¥2,000，实时到账。这笔是红档，需要你在面板输入交易密码和短信动态码才能完成。", "tool_calls": [], "model": "deepseek-flash", "usage": {"prompt": 1021, "completion": 44}, "ms": 1405}

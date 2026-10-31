@@ -133,7 +133,7 @@ class Analytics:
     # ------------------------------------------------------------------ 分类统计
     def _expenses(self, user_id, start, end):
         return self.db.execute("""SELECT category, amount_cents FROM transactions WHERE user_id=? AND time>=? AND time<?
-            AND status IN ('success','in_transit') AND amount_cents<0 AND category NOT IN ('账户互转','理财申购','理财赎回')""", (user_id, iso(start), iso(end))).fetchall()
+            AND status IN ('success','in_transit') AND amount_cents<0 AND category NOT IN ('账户互转','理财申购','理财赎回','换汇')""", (user_id, iso(start), iso(end))).fetchall()
 
     def breakdown(self, user_id, start, end):
         rows = self._expenses(user_id, start, end)
@@ -250,7 +250,7 @@ class Analytics:
     # ------------------------------------------------------------------ 月报 / 年报（PLAN L4、L5）
     def _income(self, user_id, start, end):
         return self.db.execute("""SELECT COALESCE(SUM(amount_cents),0) FROM transactions WHERE user_id=? AND time>=? AND time<?
-            AND status='success' AND amount_cents>0 AND category NOT IN ('账户互转','理财申购','理财赎回')""", (user_id, iso(start), iso(end))).fetchone()[0]
+            AND status='success' AND amount_cents>0 AND category NOT IN ('账户互转','理财申购','理财赎回','换汇')""", (user_id, iso(start), iso(end))).fetchone()[0]
 
     def monthly_report(self, user_id, month):
         now = self.k.now()

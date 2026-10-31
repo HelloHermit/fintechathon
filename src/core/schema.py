@@ -132,6 +132,9 @@ CREATE TABLE IF NOT EXISTS im_bindings(
 CREATE TABLE IF NOT EXISTS bind_codes(
     user_id TEXT NOT NULL, channel TEXT NOT NULL, code_hash TEXT NOT NULL, code_salt TEXT NOT NULL,
     expires_at TEXT NOT NULL, used INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(user_id, channel));
+CREATE TABLE IF NOT EXISTS fx_wallets(
+    user_id TEXT NOT NULL, currency TEXT NOT NULL, amount_minor INTEGER NOT NULL CHECK(amount_minor>=0),
+    PRIMARY KEY(user_id, currency));
 CREATE TABLE IF NOT EXISTS audit(
     id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT NOT NULL, user_id TEXT NOT NULL,
     turn_id TEXT, request_id TEXT, intent TEXT NOT NULL, tier TEXT NOT NULL,
@@ -163,6 +166,9 @@ def migrate(connection):
     columns = {row[1] for row in connection.execute("PRAGMA table_info(notifications)")}
     if "ref" not in columns:
         connection.execute("ALTER TABLE notifications ADD COLUMN ref TEXT")
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(cards)")}
+    if "foreign_enabled" not in columns:
+        connection.execute("ALTER TABLE cards ADD COLUMN foreign_enabled INTEGER NOT NULL DEFAULT 0")
     columns = {row[1] for row in connection.execute("PRAGMA table_info(requests)")}
     if "channel" not in columns:
         connection.execute("ALTER TABLE requests ADD COLUMN channel TEXT NOT NULL DEFAULT 'app'")
