@@ -23,6 +23,26 @@ BUSINESS_HINT = re.compile(r"转账|转[0-9一二两三四五六七八九十百�
 DEFAULT_SUGGESTIONS = ["这个月花了多少钱？", "帮我看看有没有异常扣款", "我有哪些卡", "给小王转200"]
 
 
+class StepList(list):
+    """决策链列表：每追加一步就回调一次（流式输出用）。"""
+
+    def __init__(self, on_step=None):
+        super().__init__()
+        self.on_step = on_step
+
+    def append(self, item):
+        super().append(item)
+        if self.on_step:
+            try:
+                self.on_step(item)
+            except Exception:
+                self.on_step = None  # 客户端断开时不影响本轮处理
+
+    def extend(self, items):
+        for item in items:
+            self.append(item)
+
+
 class Agent:
     def __init__(self, kernel, llm):
         self.kernel = kernel
@@ -83,15 +103,20 @@ class Agent:
         return resp
 
     # ------------------------------------------------------------------ 聊天
-    def chat(self, user_id, text):
+    def chat(self, user_id, text, channel="app", on_step=None):
+        """channel：app（网页）或 feishu（IM）。on_step：每产生一步决策链就回调（流式接口用）。"""
         with self.user_lock(user_id):
-            return self._chat(user_id, text)
+            resp = self._chat(user_id, text, on_step)
+            if channel != "app" and resp.get("pending"):
+                self.kernel.mark_channel(resp["pending"]["request_id"], channel)
+                resp["pending"]["channel"] = channel
+            return resp
 
-    def _chat(self, user_id, text):
+    def _chat(self, user_id, text, on_step=None):
         turn_id = new_id("t")
         started = time.monotonic()
         self.kernel.tick()
-        trace = []
+        trace = StepList(on_step)
         verdict = guard.check_input(text)
         if verdict["verdict"] == "blocked":
             count, locked = self.kernel.record_suspicious(user_id, verdict["category"] + ":" + verdict["rule"], turn_id)

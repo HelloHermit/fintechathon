@@ -68,6 +68,7 @@ class App:
         self.model_status = model_status or (lambda: {"configured": False, "name": "", "mode": "unavailable"})
         self.rate = {}
         self.rate_lock = threading.Lock()
+        self.feishu = None  # 飞书机器人（python run.py --feishu 时启动）
 
     def allow(self, key, limit=40, window=60):
         now = time.monotonic()
@@ -233,6 +234,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._error(404, "not_found", error.message)
         if route == "pending":
             return self._send(200, {"items": k.open_pendings(uid)})
+        if route == "channels":
+            from .channels import binding
+            return self._send(200, binding.status(k, uid, app.feishu is not None))
         return self._error(404, "not_found", "没有这个接口。")
 
     # ------------------------------------------------------------------ POST
@@ -273,6 +277,35 @@ class Handler(BaseHTTPRequestHandler):
             traceback.print_exc()
             self._error(500, "internal", "服务暂时不可用，未报告任何业务成功。")
 
+    def _stream_chat(self, uid, text):
+        """text/event-stream：边执行边推送决策链步骤（event: step），最后推完整 TurnResponse（event: final）。"""
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Accel-Buffering", "no")
+        self.send_header("Content-Security-Policy", CSP)
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.close_connection = True
+
+        def emit(event, data):
+            chunk = f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n".encode("utf-8")
+            self.wfile.write(chunk)
+            self.wfile.flush()
+
+        try:
+            resp = self.app.agent.chat(uid, text, on_step=lambda step: emit("step", step))
+        except Exception:
+            traceback.print_exc()
+            resp = {"turn_id": None, "assistant": {"text": "服务暂时不可用，未报告任何业务成功。", "blocks": []}, "pending": None,
+                    "plan": None, "suggestions": [], "trace": [], "guard": {"input": "pass", "fact_check": "pass", "locked_until": None},
+                    "error": {"code": "internal", "message": "服务暂时不可用"}}
+        try:
+            emit("final", resp)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
     def _str(self, body, key, max_len=64, required=True):
         value = body.get(key)
         if value is None and not required:
@@ -285,13 +318,26 @@ class Handler(BaseHTTPRequestHandler):
         app, k, agent = self.app, self.app.kernel, self.app.agent
         uid = app.user_id
         client = self.client_address[0]
-        if route == "chat":
+        if route in ("chat", "chat/stream"):
             text = body.get("text")
             if set(body) != {"text"} or type(text) is not str or not 1 <= len(text.strip()) <= 500:
                 return self._error(400, "invalid_request", "消息需要 1–500 个字。")
             if not app.allow(("chat", client), int(os.environ.get("FINTECH_CHAT_RATE_PER_MIN", "60")), 60):
                 return self._error(429, "rate_limited", "发送太频繁了，请稍后再试。")
-            return self._send(200, agent.chat(uid, text.strip()))
+            if route == "chat":
+                return self._send(200, agent.chat(uid, text.strip()))
+            return self._stream_chat(uid, text.strip())
+        if route == "channels/feishu/bind-code":
+            if body:
+                raise ValueError("fields")
+            from .channels import binding
+            return self._send(200, binding.create_code(k, uid))
+        if route == "channels/feishu/unbind":
+            if body:
+                raise ValueError("fields")
+            from .channels import binding
+            binding.unbind(k, "feishu", uid)
+            return self._send(200, binding.status(k, uid, app.feishu is not None))
         if route == "confirm":
             if not set(body) <= {"request_id", "confirmation_code", "risk_acknowledged"}:
                 raise ValueError("fields")

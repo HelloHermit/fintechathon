@@ -126,6 +126,12 @@ CREATE TABLE IF NOT EXISTS anomaly_marks(
 CREATE TABLE IF NOT EXISTS turns(
     turn_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, time TEXT NOT NULL,
     input_redacted TEXT NOT NULL, trace_json TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS im_bindings(
+    channel TEXT NOT NULL, external_id TEXT NOT NULL, user_id TEXT NOT NULL REFERENCES users,
+    bound_at TEXT NOT NULL, PRIMARY KEY(channel, external_id));
+CREATE TABLE IF NOT EXISTS bind_codes(
+    user_id TEXT NOT NULL, channel TEXT NOT NULL, code_hash TEXT NOT NULL, code_salt TEXT NOT NULL,
+    expires_at TEXT NOT NULL, used INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(user_id, channel));
 CREATE TABLE IF NOT EXISTS audit(
     id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT NOT NULL, user_id TEXT NOT NULL,
     turn_id TEXT, request_id TEXT, intent TEXT NOT NULL, tier TEXT NOT NULL,
@@ -157,3 +163,6 @@ def migrate(connection):
     columns = {row[1] for row in connection.execute("PRAGMA table_info(notifications)")}
     if "ref" not in columns:
         connection.execute("ALTER TABLE notifications ADD COLUMN ref TEXT")
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(requests)")}
+    if "channel" not in columns:
+        connection.execute("ALTER TABLE requests ADD COLUMN channel TEXT NOT NULL DEFAULT 'app'")

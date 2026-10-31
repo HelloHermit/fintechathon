@@ -79,6 +79,11 @@ class Kernel:
     def reset(self):
         """按 rich 种子重建演示库（仅演示模式）。"""
         with self.lock:
+            # IM 绑定是渠道配置，不是演示数据：重置后保留（否则每次重置都要重新绑定飞书）
+            try:
+                bindings = [tuple(r) for r in self.db.execute("SELECT * FROM im_bindings")]
+            except Exception:
+                bindings = []
             self.db.close()
             if self.db_path != ":memory:":
                 for suffix in ("", "-wal", "-shm"):
@@ -89,6 +94,9 @@ class Kernel:
             self.option_sets.clear()
             self.questionnaires.clear()
             self._open()
+            if bindings:
+                with self.tx():
+                    self.db.executemany("INSERT OR IGNORE INTO im_bindings VALUES(?,?,?,?)", bindings)
 
     def close(self):
         try:
@@ -312,6 +320,10 @@ class Kernel:
             self.audit(user_id, row["intent"], row["tier"], "pending_voided", "cancelled", "同一对象生成了新的待确认单，旧单作废",
                        request_id=row["request_id"])
 
+    def mark_channel(self, request_id, channel):
+        with self.tx():
+            self.db.execute("UPDATE requests SET channel=? WHERE request_id=?", (channel, request_id))
+
     def open_pendings(self, user_id):
         now = self.now()
         rows = self.db.execute("SELECT * FROM requests WHERE user_id=? AND status='pending' ORDER BY created_at", (user_id,)).fetchall()
@@ -366,7 +378,8 @@ class Kernel:
         result = {"request_id": row["request_id"], "kind": row["kind"], "tier": row["tier"], "intent": row["intent"],
                   "title": view["title"], "lines": view["lines"], "impact": view.get("impact", ""),
                   "risk": risk, "factors": ["pin", "sms_otp"] if row["tier"] == "red" else [],
-                  "expires_at": row["expires_at"], "plan_id": row["plan_id"]}
+                  "expires_at": row["expires_at"], "plan_id": row["plan_id"],
+                  "channel": row["channel"] if "channel" in row.keys() else "app"}
         return result
 
     def pending_for(self, user_id):
