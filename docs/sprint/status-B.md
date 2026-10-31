@@ -4,7 +4,8 @@
 
 ## 当前状态
 
-- 状态（10-31 01:20）：**B0–B6 初稿全部完成并已推送**；B7 的“全新克隆能跑、文档链接有效”已先检查通过。评测第三次全量（`dee1f4e`）151/151。
+- 状态（10-31 16:20）：**正在做 PLAN 第 11.3 节**（流式、绑定飞书、PWA、飞书接入说明、对标 Revolut AIR、多渠道风控），11-01 14:00 前完成；接口需求见“需要对方做的”第 14–15 条。
+- 此前（10-31 01:20）：**B0–B6 初稿全部完成并已推送**；B7 的“全新克隆能跑、文档链接有效”已先检查通过。评测第三次全量（`dee1f4e`）151/151。
 - **队长说“继续”后的下一步**：
   1. `git pull`，读 `docs/sprint/status-A.md`，跟进接口变更与 A 的留言。
   2. **11-01 22:00 最终评测**（功能冻结 20:00 之后）：`python bench/run_bench.py --start`（约 10 分钟）。失败项先判断是后端问题还是用例/运行器问题，照实记录。
@@ -56,6 +57,12 @@
 11. ~~（评测发现）聊天里“撤回刚才那笔”直接执行了~~ —— **我读错了记录，撤回**：后端出的是黄档单，“已撤回”是运行器点确认后的回复（A 已说明，T7 期望已改）。原文：（T7）：回复“已撤回给 *小龙 的 ¥9,000.00，资金已全额退回”，没有出黄档确认单，也没有 `receipt` 卡片。PLAN 权限表和 API_V2 5.2 都写撤回是黄档。（撤回是降风险操作，影响不大，但和权限表不一致，评委按表核对会扣分；另外没有回执卡片，前端看不到审计哈希。）
 12. **（评测发现）后端偶发 500**：首跑 T6-c 在 `POST /api/v2/demo/reset` 时返回 500，服务日志：`Kernel.now()` → `parse_iso(self._meta("clock_anchor_sim"))` → `TypeError: fromisoformat: argument must be str`，像是重置过程中另一个线程（调度器？）读到了还没写入的时钟锚点。只出现 1 次。
 13. （小建议）`.env.example` 还写着旧的 `configure-model.ps1`，可以顺手改成和 `docs/部署说明.md` 一致的说明（文件归属不明确，我没动）。
+
+14. **（PLAN 第 11 节，10-31 16:20）前端需要的接口，请在 API_V2 里定稿（名字可以改，我跟着改）**。前端已按下面的写法实现，接口不存在时自动隐藏或退回，不会报错：
+   - **流式**：按 PLAN 11.2 第 7 条，`POST /api/v2/chat/stream`，请求体同 `/chat`，`Content-Type: text/event-stream`；`event: step` 的 `data` 是一个 TraceStep（JSON），`event: final` 的 `data` 是完整 TurnResponse；出错时 `event: error`，`data` 为 `{"code","message"}`。前端在 404/405/非 event-stream 时退回 `/chat`。
+   - **飞书绑定**：`GET /api/v2/channels` → `{"feishu": {"enabled": bool, "bound": bool, "display_name"?: str, "bound_at"?: iso}}`（`enabled=false` 表示后端没开 `--feishu`）；`POST /api/v2/channels/feishu/bind-code` → `{"code": "123456", "expires_at": iso}`；`POST /api/v2/channels/feishu/unbind` → 同 GET 的结构。
+   - **来自飞书的待办**：`PendingOperation` 加可选字段 `"origin": "app" | "feishu"`；前端对 `origin=feishu` 的红档单在顶部提示“来自飞书的待办，需要在 App 内完成强验证”（刷新时从 `GET /api/v2/pending` 读）。
+15. **PWA 离线外壳**：Service Worker 文件在 `src/web_assets/sw.js`。要让它管住整个站点（作用域 `/`），请服务端二选一：① 新增 `GET /sw.js` 返回这个文件（`text/javascript`，`Cache-Control: no-cache`）；② 或给 `/assets/sw.js` 加响应头 `Service-Worker-Allowed: /`。前端先试 `/sw.js`，不行再用 `/assets/sw.js`（作用域只到 `/assets/`，仍可缓存静态资源）。CSP 里 `worker-src` 没写时回落到 `script-src 'self'`，不用改。
 
 ## 接口变更（只有会话 A 写）
 
