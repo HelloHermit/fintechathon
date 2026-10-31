@@ -247,6 +247,8 @@ export async function handle(method, path, body) {
     if (p === "/api/v2/audit") return clone(D.audit);
     if (p === "/api/v2/notifications") return { items: clone(S.notifications) };
     if (p === "/api/v2/sim-phone") return { messages: clone(S.sms) };
+    if (p === "/api/v2/channels") return { feishu: { enabled: true, bound: !!S.feishuBound, display_name: S.feishuBound ? "陈雨桐（飞书）" : undefined, bound_at: S.feishuBound ? iso(nowMs()) : undefined } };
+    if (p === "/api/v2/pending") return { items: [...S.pendings.values()].map((e) => { const o = clone(e.op); delete o.confirmation_code; return o; }) };
     if (p === "/api/v2/plans") return { plans: [...S.plans.values()].map((x) => ({ plan_id: x.plan_id, title: x.title, status: x.status, created_at: x.created_at, node_count: x.nodes.length, done_count: x.nodes.filter((n) => n.status === "success").length })) };
     let m = /^\/api\/v2\/plans\/(.+)$/.exec(p);
     if (m) { const x = S.plans.get(decodeURIComponent(m[1])); if (!x) throw err(404, "not_found", "计划不存在"); return clone(x); }
@@ -319,6 +321,8 @@ export async function handle(method, path, body) {
       if (it === "cancel_subscription") return cancelGym();
       throw err(400, "unknown_intent", "不支持的操作");
     }
+    case "/api/v2/channels/feishu/bind-code": S.bindCode = String(100000 + Math.floor(Math.random() * 899999)); setTimeout(() => { S.feishuBound = true; }, 6000); return { code: S.bindCode, expires_at: iso(nowMs() + 300e3) };
+    case "/api/v2/channels/feishu/unbind": S.feishuBound = false; return { feishu: { enabled: true, bound: false } };
     case "/api/v2/demo/advance-clock": {
       const target = body.to ? Date.parse(body.to) : nowMs() + (body.minutes || 0) * 60e3;
       S.now = target; S.realAt = Date.now();

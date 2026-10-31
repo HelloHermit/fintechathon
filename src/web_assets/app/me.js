@@ -1,7 +1,7 @@
 // “我的”页及子页面：理财、订阅、定时任务、计划、通知、审计、安全透视、模拟手机、演示控制、关于。
 import { h, icon, fmtTime, fill } from "./util.js";
 import { api, QUICK, MOCK } from "./api.js";
-import { state, on } from "./store.js";
+import { state, on, simNowMs } from "./store.js";
 import { renderBlock, quickOrChat } from "./blocks.js";
 import { renderPlan, PLAN_STATUS } from "./plan.js";
 import { renderTrace } from "./trace.js";
@@ -23,6 +23,7 @@ export function mePage() {
       ["audit", "审计记录", "只追加 + 哈希链校验", () => pushPage("审计记录", auditPage)],
       ["shield", "安全透视", "最近一轮的决策链", () => pushPage("安全透视", tracePage)],
       ["phone", "模拟手机短信", "动态码只出现在这里", () => pushPage("模拟手机", smsPage)],
+      ["chat", "绑定飞书", "在飞书里和小安对话（红档仍回 App 验证）", () => pushPage("绑定飞书", feishuPage)],
       ["fast", "演示控制", "快进时间、重置、切换身份", () => pushPage("演示控制", demoPage)],
       ["sparkle", "关于小安", "设计原则与模拟声明", () => pushPage("关于小安", aboutPage)],
     ];
@@ -139,6 +140,66 @@ export function tracePage(c) {
   const paint = () => fill(c, renderTrace(state.lastTurn));
   paint();
   const off = on("turn", () => (c.isConnected ? paint() : off()));
+}
+
+// 绑定飞书（PLAN 11.2–11.3）：网页生成 6 位一次性绑定码，用户在飞书私聊机器人发“绑定 123456”
+export function feishuPage(c) {
+  let timer = null;
+  const stop = () => clearInterval(timer);
+  const rules = h("div.card-plain", null, h("div.blk-title", { text: "飞书里能办什么（渠道分级风控）" }),
+    h("ul.bullets", null,
+      h("li", { text: "绿档（查询、账单、报告）：在飞书里直接办。" }),
+      h("li", { text: "黄档（小额转账、冻结卡等）：飞书卡片上的“确认/取消”按钮；聊天里打“确认”两个字不算确认。" }),
+      h("li", { text: "红档（大额转账、解冻、申购等）：飞书里只生成待办，必须回到 App 输入交易密码 + 短信动态码。动态码不会发到飞书。" }),
+      h("li", { text: "只处理和机器人的私聊，群聊消息一律忽略；没绑定的人只能看到使用说明。" })));
+  async function load() {
+    stop();
+    c.replaceChildren(h("div.skeleton"));
+    let ch;
+    try { ch = await api.channels(); } catch (e) {
+      fill(c, h("div.note.warning", null, icon("alert"), h("div", { text: e.status === 404 ? "后端还没有提供飞书渠道接口（需要用 python run.py --feishu 启动）。" : e.message })), rules);
+      return;
+    }
+    const f = ch.feishu || {};
+    if (!f.enabled) {
+      fill(c, h("div.note.warning", null, icon("alert"), h("div", { text: "飞书机器人没有启动。请按《飞书接入说明》配置 FEISHU_APP_ID / FEISHU_APP_SECRET 后，用 python run.py --feishu 启动。" })), rules);
+      return;
+    }
+    if (f.bound) {
+      fill(c, h("div.chain-box.ok", null, icon("check"), h("div", null, h("b", { text: `已绑定飞书${f.display_name ? "：" + f.display_name : ""}` }),
+        h("div.muted.small", { text: f.bound_at ? `绑定时间 ${fmtTime(f.bound_at, "ymd hm")}` : "" }))),
+        rules,
+        h("button.btn.danger-outline.block", { type: "button", onclick: async () => { try { await api.feishuUnbind(); } catch (e) { /* 显示在下面 */ } load(); } }, "解除绑定"));
+      return;
+    }
+    const codeBox = h("div.bind-code");
+    const left = h("div.muted.small");
+    const gen = h("button.btn.primary.block", { type: "button" }, "生成绑定码");
+    gen.addEventListener("click", async () => {
+      gen.disabled = true;
+      try {
+        const r = await api.feishuBindCode();
+        codeBox.replaceChildren(...String(r.code).split("").map((d) => h("span", { text: d })));
+        const exp = Date.parse(r.expires_at);
+        const tick = () => {
+          const s = Math.max(0, Math.round((exp - simNowMs()) / 1000)); // 后端时间是模拟时钟
+          left.textContent = s > 0 ? `在飞书里私聊“小安”机器人，发送：绑定 ${r.code}（${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")} 内有效，只能用一次）` : "绑定码已过期，请重新生成。";
+          if (s <= 0) { stop(); gen.disabled = false; }
+        };
+        tick();
+        timer = setInterval(async () => {
+          tick();
+          try { const now = await api.channels(); if (now.feishu?.bound) load(); } catch { /* 忽略 */ }
+        }, 3000);
+      } catch (e) { left.textContent = e.message; gen.disabled = false; }
+    });
+    fill(c, h("div.card-plain", null, h("div.blk-title", { text: "绑定步骤" }),
+      h("ol.bullets", null, h("li", { text: "点“生成绑定码”，得到 6 位数字（5 分钟有效、一次性）。" }), h("li", { text: "打开飞书，私聊“小安”机器人，发送“绑定 + 绑定码”。" }), h("li", { text: "绑定成功后这里会自动刷新。" })),
+      codeBox, left, gen), rules);
+  }
+  load();
+  const obs = new MutationObserver(() => { if (!c.isConnected) { stop(); obs.disconnect(); } });
+  obs.observe(document.body, { childList: true, subtree: true });
 }
 
 export function smsPage(c) { fill(c, smsList()); }

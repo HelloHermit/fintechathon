@@ -17,10 +17,11 @@ const EXAMPLES = [
   ["跨场景", "gift", ["我老婆下个月12号生日，帮我准备一下", "下个月房租交得起吗"]],
 ];
 
+const STEP_KIND = { guard: "输入守卫", llm: "模型思考", tool: "调用工具", resolver: "代码解析", provenance: "参数溯源", tier: "代码判档", risk: "反诈评分", auth: "验证", fact_check: "事实校验", plan: "任务规划", audit: "写入审计" };
 const BUSY_STEPS = ["正在理解你的话…", "正在查询账本…", "代码正在校验和判档…", "正在整理回复…"];
 
 export function chatPage() {
-  let list, input, sendBtn, sugg, pendBar, lockBar, busyEl, busyTimer;
+  let list, input, sendBtn, sugg, pendBar, lockBar, busyEl, busyTimer, busyLabel;
   const el = h("div.page.chat-page");
 
   function build() {
@@ -147,8 +148,16 @@ export function chatPage() {
     busyEl = h("div.msg.assistant.busy", null, h("div.avatar.sm", { text: "安" }), h("div.bubble.typing", null, h("span.dots", null, h("i"), h("i"), h("i")), label));
     list.append(busyEl);
     busyTimer = setInterval(() => { i = Math.min(i + 1, BUSY_STEPS.length - 1); label.textContent = BUSY_STEPS[i]; }, 1600);
+    busyLabel = label;
     scrollDown();
   }
+  // 流式：后端每推一步，就把正在做的事显示出来（不再用固定的轮播文字）
+  on("stream-step", (st) => {
+    if (!busyLabel?.isConnected) return;
+    clearInterval(busyTimer);
+    busyLabel.textContent = `${STEP_KIND[st.kind] || "处理中"}：${String(st.label || "").slice(0, 40)}`;
+    scrollDown();
+  });
 
   function scrollDown() {
     requestAnimationFrame(() => { list.scrollTop = list.scrollHeight; });

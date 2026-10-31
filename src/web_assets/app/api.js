@@ -67,10 +67,82 @@ function qs(obj) {
 }
 
 // ---- 端点（与 docs/sprint/API_V2.md 第 2 节一一对应） ----
+/**
+ * 流式聊天（PLAN 11.2 第 7 条）：POST /api/v2/chat/stream，text/event-stream；
+ * event: step → 一个 TraceStep；event: final → 完整 TurnResponse；event: error → {code, message}。
+ * 接口不存在或返回的不是事件流时，自动退回普通 /api/v2/chat。
+ */
+let streamUnsupported = false;
+async function chatStream(text, onStep) {
+  if (MOCK) {
+    const m = await mock();
+    const resp = await m.handle("POST", "/api/v2/chat", { text });
+    for (const st of resp.trace || []) { onStep?.(st); await new Promise((r) => setTimeout(r, 160)); }
+    return resp;
+  }
+  if (streamUnsupported || !window.ReadableStream || !window.TextDecoder) return post("/api/v2/chat", { text });
+  let res;
+  try {
+    res = await fetch("/api/v2/chat/stream", {
+      method: "POST", credentials: "same-origin",
+      headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}) },
+      body: JSON.stringify({ text }),
+    });
+  } catch {
+    return post("/api/v2/chat", { text });
+  }
+  const type = res.headers.get("content-type") || "";
+  if (res.status === 404 || res.status === 405 || res.status === 501 || (res.ok && !type.includes("text/event-stream"))) {
+    streamUnsupported = true;
+    return post("/api/v2/chat", { text });
+  }
+  if (!res.ok) {
+    let data = null;
+    try { data = await res.json(); } catch { /* 忽略 */ }
+    throw new ApiError(res.status, data?.error?.code, data?.error?.message || `请求失败（HTTP ${res.status}）`, data?.error);
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  let final = null;
+  const handle = (block) => {
+    let ev = "message";
+    const data = [];
+    for (const line of block.split(/\r?\n/)) {
+      if (line.startsWith("event:")) ev = line.slice(6).trim();
+      else if (line.startsWith("data:")) data.push(line.slice(5).replace(/^ /, ""));
+    }
+    if (!data.length) return;
+    let obj;
+    try { obj = JSON.parse(data.join("\n")); } catch { return; }
+    if (ev === "step") onStep?.(obj);
+    else if (ev === "final") final = obj;
+    else if (ev === "error") throw new ApiError(500, obj.code, obj.message || "处理失败，请重试。");
+  };
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (value) buf += dec.decode(value, { stream: true });
+    let m;
+    while ((m = /\r?\n\r?\n/.exec(buf))) {
+      const block = buf.slice(0, m.index);
+      buf = buf.slice(m.index + m[0].length);
+      handle(block);
+    }
+    if (done) break;
+  }
+  if (buf.trim()) handle(buf);
+  if (!final) throw new ApiError(0, "stream_incomplete", "连接中断，请重试。");
+  return final;
+}
+
 export const api = {
   session: () => get("/api/v2/session"),
   home: () => get("/api/v2/home"),
   chat: (text) => post("/api/v2/chat", { text }),
+  chatStream,
+  channels: () => get("/api/v2/channels"),
+  feishuBindCode: () => post("/api/v2/channels/feishu/bind-code", {}),
+  feishuUnbind: () => post("/api/v2/channels/feishu/unbind", {}),
   action: (type, ref, value) => post("/api/v2/action", { type, ref, value }),
   quickIntent: (intent, params = {}) => post("/api/v2/quick-intent", { intent, params }),
   confirm: (request_id, confirmation_code, risk_acknowledged) =>

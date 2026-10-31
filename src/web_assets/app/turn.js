@@ -69,7 +69,7 @@ export function applyTurn(resp, opts = {}) {
 export function sendChat(text) {
   const t = String(text || "").trim();
   if (!t || state.busy) return null;
-  return runTurn(() => api.chat(t.slice(0, 500)), { userText: t, retry: () => sendChat(t) });
+  return runTurn(() => api.chatStream(t.slice(0, 500), (step) => emit("stream-step", step)), { userText: t, retry: () => sendChat(t) });
 }
 
 export function sendAction(type, ref, value, label) {

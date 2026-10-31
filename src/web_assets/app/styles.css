@@ -396,3 +396,7 @@ pre, .code { font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, mono
 .limit-sheet { padding-bottom: 8px; }
 .is-mock .sb-badge::after { content: " · 假数据"; }
 .aa-btns { display: grid; gap: 4px; }
+.origin-banner { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: var(--ai-soft); color: var(--ai); font-size: 13px; font-weight: 600; padding: 8px 14px; text-align: left; flex: none; }
+.origin-banner span { flex: 1; } .origin-banner b { color: var(--brand); }
+.bind-code { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 10px 0; }
+.bind-code span { height: 48px; border-radius: 10px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; font-size: 24px; font-weight: 800; }

@@ -1,7 +1,7 @@
 // 入口：取会话 → 建标签页 → 右侧面板（演示控制 / 安全透视 / 模拟手机）→ 轮询短信。
 import { h, icon, fill } from "./util.js";
 import { api, setCsrf, MOCK, params } from "./api.js";
-import { state, on, emit, simNowMs, beijing, trackPending } from "./store.js";
+import { state, on, emit, simNowMs, beijing, trackPending, openPendings } from "./store.js";
 import { buildTabbar, registerPage, goTab } from "./nav.js";
 import { homePage } from "./home.js";
 import { chatPage } from "./chat.js";
@@ -11,7 +11,7 @@ import { mePage } from "./me.js";
 import { applySession, demoControls } from "./demo.js";
 import { renderTrace } from "./trace.js";
 import { smsList, startSmsPolling } from "./sms.js";
-import "./pending.js";
+import { openPending } from "./pending.js";
 
 async function boot() {
   const screen = document.getElementById("screen");
@@ -39,6 +39,10 @@ async function boot() {
   goTab(["home", "chat", "bills", "cards", "me"].includes(startTab) ? startTab : "home");
 
   await restorePendings();
+  setInterval(restorePendings, 15000); // 飞书等其他渠道产生的待办，网页上也能看到
+  on("pendings", paintOriginBanner);
+  paintOriginBanner();
+  registerServiceWorker();
   buildSide();
   startSmsPolling();
   tickClock();
@@ -53,6 +57,26 @@ async function restorePendings() {
     (r.items || []).forEach((op) => trackPending(op, null));
     if ((r.items || []).length) emit("pendings");
   } catch { /* 旧后端没有这个接口时忽略 */ }
+}
+
+// 来自飞书的红档待办：需要回到 App 完成交易密码 + 动态码（PLAN 11.2 渠道分级风控）
+function paintOriginBanner() {
+  const el = document.getElementById("origin-banner");
+  if (!el) return;
+  const items = openPendings().filter(({ op }) => op.origin && op.origin !== "app");
+  if (!items.length) { el.hidden = true; return; }
+  const first = items[0];
+  const red = first.op.tier === "red" || first.op.kind === "strong_auth";
+  el.replaceChildren(icon("chat"), h("span", { text: `来自飞书的待办：${first.op.title}${red ? "，需要在 App 内完成强验证" : ""}${items.length > 1 ? `（共 ${items.length} 笔）` : ""}` }), h("b", { text: "去处理" }));
+  el.hidden = false;
+  el.onclick = () => openPending(first.id);
+}
+
+// PWA：先尝试作用域为整站的 /sw.js，服务端不支持时退回 /assets/sw.js（只缓存静态资源）
+async function registerServiceWorker() {
+  if (!("serviceWorker" in navigator) || MOCK) return;
+  try { await navigator.serviceWorker.register("/sw.js", { scope: "/" }); return; } catch { /* 服务端没有 /sw.js */ }
+  try { await navigator.serviceWorker.register("/assets/sw.js", { scope: "/assets/" }); } catch { /* 浏览器不支持或被禁用 */ }
 }
 
 function tickClock() {
