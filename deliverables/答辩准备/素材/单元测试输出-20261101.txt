@@ -1,0 +1,18 @@
+# 单元测试原始输出（会话 C 实跑，供核对）
+# 时间：2026-11-01 01:20 左右（北京时间）；环境：Claude Code 云端 Linux 容器，没有 Docker 守护进程；代码版本：7f5b3b6（之后到现在只有文档改动，代码没变）
+# 命令：python -m unittest discover -s tests -p 'test_*.py'
+# 读法：第一行每个点是一项通过，s 是跳过，E 是错误。结果 370 项里跳过 2 项；唯一的错误是 test_docker_isolation_independent 这一组的 setUpClass（需要 Docker，云端没有，属预期），这一组的测试没有运行。所以不能说“370 项全部通过”。
+
+.................................................................................................................................Es.................................................................................................................................s...............................................................................................................
+======================================================================
+ERROR: setUpClass (test_docker_isolation_independent.DockerIndependentAcceptance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/user/fintechathon/tests/test_docker_isolation_independent.py", line 106, in setUpClass
+    raise RuntimeError("FINTECH_DOCKER_RUNTIME is required; no skip or ordinary-process fallback")
+RuntimeError: FINTECH_DOCKER_RUNTIME is required; no skip or ordinary-process fallback
+
+----------------------------------------------------------------------
+Ran 370 tests in 99.736s
+
+FAILED (errors=1, skipped=2)
