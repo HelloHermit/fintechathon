@@ -319,3 +319,29 @@ class TravelTests(unittest.TestCase):
         k, _ = new_kernel()
         out = tool(k, "fx_rates", "日元汇率多少")
         self.assertIn("模拟", out.model_result["note"])
+
+
+class HonestyTests(unittest.TestCase):
+    """外部审查 11-01：回执与卡片如实说明。"""
+
+    def test_sandbox_limits_match_platform(self):
+        from src.core import sandbox
+        self.assertEqual(sandbox.actual_limits("subprocess", "win32")["memory_mb"], "未限制（降级）")
+        self.assertEqual(sandbox.actual_limits("docker")["memory_mb"], 128)
+        self.assertEqual(sandbox.actual_limits("subprocess+netns", "linux")["network"], False)
+
+    def test_aa_receipt_separates_notified_and_recorded(self):
+        k, _ = new_kernel()
+        p = tool(k, "aa_collect", "和小王、小张吃饭花了360，AA一下", total_amount=360, participants=["小王", "小张"]).pending
+        result = k.confirm("alice", p["request_id"], p["confirmation_code"])
+        labels = {l["label"]: l["value"] for l in result["lines"]}
+        self.assertEqual(labels["已通知（平台内）"], "王磊")
+        self.assertEqual(labels["已记录、未通知（平台外）"], "张伟")
+
+    def test_takeover_wording_is_honest(self):
+        from src.core import plans
+        k, _ = new_kernel()
+        plan = plans.create_birthday_plan(k, "alice", "c-spouse")
+        _, note = plans.control(k, "alice", plan["plan_id"], "takeover")
+        self.assertIn("暂未接入真实客服", note)
+        self.assertNotIn("会联系你", note)

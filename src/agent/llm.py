@@ -87,6 +87,12 @@ class LLMClient:
             result = json.loads(path.read_text(encoding="utf-8"))
             result["ms"] = 0
             return result
+        if self.mode == "record":
+            existing = self.cassette_dir / (key + ".json")
+            if existing.exists():  # 已录过的不再重录：追加新步骤时，前面的演示保持逐字不变
+                result = json.loads(existing.read_text(encoding="utf-8"))
+                result["ms"] = 0
+                return result
         if not self._api_key:
             raise ModelUnavailable("model_unavailable", "没有配置模型密钥（FINTECH_MODEL_API_KEY）。")
         started = time.monotonic()

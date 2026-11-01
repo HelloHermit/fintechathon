@@ -116,5 +116,21 @@
    "code_analysis"
   ],
   "pending": null
+ },
+ {
+  "user": "给小李转200",
+  "reply": "“小李”有两位联系人：李明、李娜。你点一下要转给谁，我再生成确认单。",
+  "error": null,
+  "blocks": [
+   "options"
+  ],
+  "pending": null
+ },
+ {
+  "user": "今天天气怎么样",
+  "reply": "这个我查不了。我能帮你：查本月账单、给小李转账、看理财持仓。要办哪个？",
+  "error": null,
+  "blocks": [],
+  "pending": null
  }
 ]

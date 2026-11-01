@@ -388,7 +388,7 @@ def transfer_to_human(ctx, summary=""):
                               (ticket, ctx.user_id, (summary or "用户请求人工服务")[:100], "waiting", iso(ctx.now)))
         ctx.kernel.audit(ctx.user_id, "handover", "green", "handover_created", "success", (summary or "")[:100],
                          actor="agent", turn_id=ctx.turn_id)
-    return ToolOutcome({"status": "created", "ticket_id": ticket, "note": "模拟人工客服会在工作时间联系用户"},
+    return ToolOutcome({"status": "created", "ticket_id": ticket, "note": "已登记模拟工单，暂未接入真实客服；回复时如实说明，不要承诺有人会联系用户"},
                        blocks=[{"type": "handover", "data": {"ticket_id": ticket, "summary": (summary or "用户请求人工服务")[:100], "status": "waiting"}}])
 
 

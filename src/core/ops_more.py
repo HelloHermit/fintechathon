@@ -166,12 +166,21 @@ class AACollectHandler(Handler):
                 self.k.notify(payer_user, "aa_request", f"{sender} 向你发起 AA 收款",
                               f"{p.get('memo') or 'AA'}：每人 {yuan(p['per_person_cents'])}。在“小安”里说“付一下AA”或点通知即可付款。", ref=aa_id)
             items.append({"request_id": aa_id, "from_name": sender, "payer_name": contact["name"], "amount_cents": p["per_person_cents"],
-                          "memo": p.get("memo") or "AA", "status": "open"})
-        return {"status": "success", "title": "AA 收款已发起",
-                "lines": [{"label": "每人应付", "value": yuan(p["per_person_cents"])},
-                          {"label": "已通知", "value": "、".join(i["payer_name"] for i in items)}],
-                "blocks": [{"type": "aa_request", "data": i} for i in items],
-                "summary": f"已向 {'、'.join(i['payer_name'] for i in items)} 发起 AA 收款，每人 {yuan(p['per_person_cents'])}"}
+                          "memo": p.get("memo") or "AA", "status": "open", "notified": bool(payer_user)})
+        notified = [i["payer_name"] for i in items if i["notified"]]
+        recorded = [i["payer_name"] for i in items if not i["notified"]]
+        lines = [{"label": "每人应付", "value": yuan(p["per_person_cents"])}]
+        if notified:
+            lines.append({"label": "已通知（平台内）", "value": "、".join(notified)})
+        if recorded:
+            lines.append({"label": "已记录、未通知（平台外）", "value": "、".join(recorded)})
+        summary = f"AA 收款已发起，每人 {yuan(p['per_person_cents'])}"
+        if notified:
+            summary += f"：已通知 {'、'.join(notified)}"
+        if recorded:
+            summary += f"{'；' if notified else '：'}{'、'.join(recorded)} 不在本平台，已记录、未通知（模拟）"
+        return {"status": "success", "title": "AA 收款已发起", "lines": lines,
+                "blocks": [{"type": "aa_request", "data": i} for i in items], "summary": summary}
 
 
 class AAPayHandler(Handler):

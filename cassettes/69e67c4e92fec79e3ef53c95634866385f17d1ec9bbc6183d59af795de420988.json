@@ -1,0 +1,1 @@
+{"content": "这个我查不了。我能帮你：查本月账单、给小李转账、看理财持仓。要办哪个？", "tool_calls": [], "model": "deepseek-flash", "usage": {"prompt": 5432, "completion": 24}, "ms": 1051}

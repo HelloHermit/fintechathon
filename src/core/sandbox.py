@@ -136,12 +136,22 @@ def _limits():
     os.setsid()
 
 
+def actual_limits(engine, platform=None):
+    """按实际引擎和平台如实报告限制（只有 Linux 子进程会设置 resource 限制；Docker 用容器参数）。"""
+    platform = platform or sys.platform
+    if engine == "docker":
+        return {"timeout_s": TIMEOUT, "cpu": "0.5 核（容器限制）", "memory_mb": 128, "network": False}
+    if platform.startswith("linux"):
+        return {"timeout_s": TIMEOUT, "cpu_s": CPU_SECONDS, "memory_mb": MEMORY_MB,
+                "network": False if engine == "subprocess+netns" else "未隔离（降级）"}
+    return {"timeout_s": TIMEOUT, "cpu_s": "未限制（降级）", "memory_mb": "未限制（降级）", "network": "未隔离（降级）"}
+
+
 def run(code, transactions):
     """返回 code_analysis 卡片的数据。被拒绝时 status=rejected（代码从未运行）。"""
     started = time.monotonic()
     engine = detect_engine()
-    limits = {"timeout_s": TIMEOUT, "cpu_s": CPU_SECONDS, "memory_mb": MEMORY_MB,
-              "network": False if engine in ("docker", "subprocess+netns") else "未隔离（降级）"}
+    limits = actual_limits(engine)
     code_hash = hashlib.sha256((code or "").encode()).hexdigest()
     reason = check_code(code)
     base = {"code": code, "code_hash": code_hash, "engine": engine, "limits": limits}

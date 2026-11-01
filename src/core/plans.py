@@ -294,7 +294,7 @@ def control(k, user_id, plan_id, action, node_hint=None, turn_id=None, actor="us
             k.db.execute("INSERT INTO handovers VALUES(?,?,?,?,?,?)", (ticket, user_id, f"计划“{plan['title']}”转人工处理",
                                                                        "waiting", iso(k.now()), plan_id))
             plan["status"], plan["handover_ticket"] = "handed_over", ticket
-            note = f"已转人工处理（工单 {ticket}），计划暂停自动执行，人工客服会联系你。"
+            note = f"已登记人工处理事项（模拟工单 {ticket}，暂未接入真实客服），计划已暂停自动执行。"
         else:
             raise RuleError("invalid_request", "不支持的计划操作。")
         save(k, user_id, plan)

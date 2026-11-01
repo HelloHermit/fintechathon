@@ -1,6 +1,6 @@
 """录制/回放演示对话（PLAN O2）。
 
-    python scripts/record_demo.py --mode record    # 用真实模型跑一遍演示脚本，把模型响应录进 cassettes/
+    python scripts/record_demo.py --mode record    # 用真实模型跑一遍演示脚本，把模型响应录进 cassettes/（已录过的步骤直接复用）
     python scripts/record_demo.py --mode replay    # 不联网，用录制结果重放，检查和录制时一致
 
 演示脚本是 PLAN 第 8 节视频分镜里的对话。每次都在全新的临时演示库上跑（按 rich 种子），所以结果可复现。
@@ -35,6 +35,8 @@ DEMO = [
     ("chat", "推荐点稳一点的理财，放半年"),
     ("chat", "我老婆下个月12号生日，帮我准备一下"), ("confirm",),
     ("chat", "周末和工作日外卖平均各花多少"),
+    ("chat", "给小李转200"),        # 11-01 追加：重名追问（只追加在末尾，前 17 步不变）
+    ("chat", "今天天气怎么样"),      # 11-01 追加：超范围兜底
 ]
 
 
